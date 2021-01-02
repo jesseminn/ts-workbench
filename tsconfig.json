@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        // # Project Options
+        "allowJs": true,
+        "checkJs": true,
+        "jsx": "react-jsx",
+        "lib": ["DOM", "ESNext"],
+        "module": "ESNext",
+        "outDir": "dist",
+        "removeComments": true,
+        "rootDir": ".",
+        "sourceMap": true,
+        "target": "ESNext",
+
+        // # Strict Checks
+        "strict": true,
+
+        // # Module Resolution
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": "src",
+        "esModuleInterop": true,
+        "moduleResolution": "Node",
+        "paths": {
+            "~/*": ["*"],
+            "~lib/*": ["lib/*"]
+        },
+
+        // # Advanced
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true
+    }
+}
