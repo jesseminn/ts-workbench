@@ -1,6 +1,8 @@
 import path from 'path';
 import { readFileSync } from 'fs';
 
+const DEFAULT_TSCONFIG_PATH = path.resolve(__dirname, './tsconfig.json');
+
 type TSConfig = {
     compilerOptions: {
         baseUrl: string;
@@ -20,7 +22,7 @@ type TSConfig = {
  * https://github.com/dividab/tsconfig-paths-webpack-plugin/issues/60
  */
 export const tsPathsToWebpackAlias = ({
-    tsconfigPath = './tsconfig.json',
+    tsconfigPath = DEFAULT_TSCONFIG_PATH,
     webpackConfigBasePath = __dirname,
     debug = false,
 } = {}) => {
@@ -30,7 +32,7 @@ export const tsPathsToWebpackAlias = ({
         }
     };
 
-    const tsconfig = loadJson<TSConfig>(tsconfigPath);
+    const tsconfig = loadTSConfig(tsconfigPath);
     const paths = tsconfig.compilerOptions.paths;
     const baseUrl = tsconfig.compilerOptions.baseUrl;
     const aliases = Object.entries(paths).reduce<Record<string, string>>((result, [pathKey, pathValue]) => {
@@ -47,6 +49,10 @@ export const tsPathsToWebpackAlias = ({
     log('aliases: ', aliases);
 
     return aliases;
+};
+
+export const loadTSConfig = (path = DEFAULT_TSCONFIG_PATH) => {
+    return loadJson<TSConfig>(path);
 };
 
 /**
