@@ -25,9 +25,13 @@ const config: Configuration = {
     module: {
         rules: [
             {
-                test: /\.tsx?$/,
+                test: /\.tsx?$/i,
                 use: 'ts-loader',
                 exclude: /node_modules/,
+            },
+            {
+                test: /\.(sc|sa|c)ss$/i,
+                use: ['style-loader', 'css-loader', 'sass-loader'],
             },
         ],
     },
