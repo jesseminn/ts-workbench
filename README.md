@@ -13,7 +13,13 @@ A starting point for TypeScript projects
 ### As a starting point
 
 ```sh
-git clone https://github.com/jesseminn/ts-workbench.git
+mkdir my-project
+cd my-project
+# clone content into current directory
+git clone https://github.com/jesseminn/ts-workbench.git .
+# optional, remove history
+rm -rf .git
+git remote add origin <github-repo-url>
 ```
 
 ### Integrate existing project
