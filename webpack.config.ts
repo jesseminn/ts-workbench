@@ -4,13 +4,13 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 
 // Utils
-import { tsPathsToWebpackAlias } from './webpack.utils';
+import { tsPathsToWebpackAlias } from './tsconfig.utils';
 
 const config: Configuration = {
     mode: 'development',
     devtool: 'inline-source-map',
     entry: {
-        index: path.resolve(__dirname, 'src/index.ts'),
+        index: path.resolve(__dirname, './index.ts'),
     },
     output: {
         path: path.resolve(__dirname, 'dist'),

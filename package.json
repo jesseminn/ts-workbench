@@ -7,7 +7,8 @@
         "build": "cross-env TS_NODE_PROJECT=\"tsconfig.webpack.json\" webpack",
         "watch": "npm run build -- --watch",
         "serve": "npm run build -- serve --open",
-        "test": "jest ./src"
+        "test": "jest --watch --coverage ./src",
+        "start": "concurrently --kill-others \"npm run test\" \"npm run serve\""
     },
     "author": "jesseminn@gmail.com",
     "license": "ISC",
@@ -20,6 +21,7 @@
         "@types/webpack": "^4.41.25",
         "@types/webpack-dev-server": "^3.11.1",
         "clean-webpack-plugin": "^3.0.0",
+        "concurrently": "^6.2.0",
         "copy-webpack-plugin": "^7.0.0",
         "cross-env": "^7.0.3",
         "css-loader": "^5.0.1",

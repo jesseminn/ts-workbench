@@ -8,7 +8,6 @@
         "module": "ESNext",
         "outDir": "dist",
         "removeComments": true,
-        "rootDir": ".",
         "sourceMap": true,
         "target": "ESNext",
 
@@ -21,13 +20,13 @@
         "esModuleInterop": true,
         "moduleResolution": "Node",
         "paths": {
-            "~/*": ["*"],
-            "~lib/*": ["lib/*"]
+            "~/*": ["*"]
         },
 
         // # Advanced
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
         "skipLibCheck": true
-    }
+    },
+    "exclude": ["coverage", "dist"]
 }

@@ -2,7 +2,7 @@ import { pathsToModuleNameMapper } from 'ts-jest/utils';
 import type { Config } from '@jest/types';
 
 // Utils
-import { loadTSConfig } from './webpack.utils';
+import { loadTSConfig } from './tsconfig.utils';
 
 const tsconfig = loadTSConfig();
 
