@@ -1,4 +1,1 @@
-import './index.scss';
-import { hello } from './src/hello';
-
-hello();
+export { hello } from './src/hello';
