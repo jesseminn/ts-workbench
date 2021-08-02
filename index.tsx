@@ -1,8 +1,8 @@
 import { render } from 'react-dom';
-import './style.scss';
+import './index.scss';
 
 // Components
-import App from './lib/App';
+import App from './src/App';
 
 const body = document.querySelector('body');
 
