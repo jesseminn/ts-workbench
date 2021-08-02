@@ -10,13 +10,19 @@ A starting point for TypeScript projects
 
 ## How to use
 
+`ts-workbranch` contains 3 starting points as branches:
+
+-   `app` for normal web app development
+-   `react-app` for React web app development
+-   `npm-package` for NPM package development
+
 ### As a starting point
 
 ```sh
 mkdir my-project
 cd my-project
 # clone content into current directory
-git clone https://github.com/jesseminn/ts-workbench.git .
+git clone --branch <branch-name> --single-branch https://github.com/jesseminn/ts-workbench.git .
 # optional, remove history
 rm -rf .git
 git remote add origin <github-repo-url>
@@ -27,7 +33,7 @@ git remote add origin <github-repo-url>
 ```sh
 git remote add ts-workbench https://github.com/jesseminn/ts-workbench.git
 git fetch ts-workbench
-git merge ts-workbench/master --squash --allow-unrelated-histories
+git merge ts-workbench/<branch-name> --squash --allow-unrelated-histories
 # After solving conflicts
 git commit -m"Integrated ts-workbench"
 npm i
