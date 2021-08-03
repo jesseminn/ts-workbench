@@ -28,5 +28,5 @@
         "resolveJsonModule": true,
         "skipLibCheck": true
     },
-    "exclude": ["coverage", "dist"]
+    "exclude": ["coverage", "dist", "demo"]
 }

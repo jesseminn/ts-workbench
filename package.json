@@ -4,7 +4,9 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "jest --watch --coverage ./src"
+        "test": "jest --watch --coverage ./src",
+        "build": "tsc --declaration --outDir ./dist",
+        "postinstall": "npm run build"
     },
     "author": "jesseminn@gmail.com",
     "license": "ISC",
