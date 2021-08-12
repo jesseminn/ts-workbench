@@ -3,13 +3,12 @@
         // # Project Options
         "allowJs": true,
         "checkJs": true,
-        "jsx": "react-jsx",
         "lib": ["DOM", "ESNext"],
         "module": "ESNext",
         "outDir": "dist",
         "removeComments": true,
-        "sourceMap": true,
         "target": "ESNext",
+        "declaration": true,
 
         // # Strict Checks
         "strict": true,
@@ -28,5 +27,6 @@
         "resolveJsonModule": true,
         "skipLibCheck": true
     },
-    "exclude": ["coverage", "dist", "demo"]
+    "include": ["./src/**/*", "./index.ts"],
+    "exclude": ["./src/**/*.test.ts"]
 }
