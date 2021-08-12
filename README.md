@@ -21,10 +21,19 @@ A starting point for TypeScript projects
 ```sh
 mkdir my-project
 cd my-project
-# clone content into current directory
+
+# Clone content into current directory
 git clone --branch <branch-name> --single-branch https://github.com/jesseminn/ts-workbench.git .
-# optional, remove history
+
+# Optional, remove history
 rm -rf .git
+
+# If you removed .git, don't forget to init a new one
+git --init
+git add .
+git commit -m "Init"
+
+# Add your own remote repo
 git remote add origin <github-repo-url>
 ```
 
