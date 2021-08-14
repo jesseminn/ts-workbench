@@ -1,34 +1,7 @@
-# TypeScript workbench
+# TypeScript workbench: npm package
 
-A starting point for TypeScript projects
+## Known issues
 
-## Implementations
+-   Run `npm i` to install dependencies also triggers `npm prepare` -> `npm build`, which might be OK if you just started a project, but could be annoying when you already built something and tried to install new dependencies, `tsc` might throw error if your code failed to compile while you just wanna install something!
 
--   Minimal Webpack & Jest config
--   Opinionated TypeScript config
--   Support TypeScript `paths`
-
-## How to use
-
-### As a starting point
-
-```sh
-mkdir my-project
-cd my-project
-# clone content into current directory
-git clone https://github.com/jesseminn/ts-workbench.git .
-# optional, remove history
-rm -rf .git
-git remote add origin <github-repo-url>
-```
-
-### Integrate existing project
-
-```sh
-git remote add ts-workbench https://github.com/jesseminn/ts-workbench.git
-git fetch ts-workbench
-git merge ts-workbench/master --squash --allow-unrelated-histories
-# After solving conflicts
-git commit -m"Integrated ts-workbench"
-npm i
-```
+-   For unknown reason, you might installed old version when installing from Github! Running `npm cache clean --force` won't help. Current solution: remove the package from `package.json`, run `npm i`, then add it back to `package.json`, run `npm i` again.
