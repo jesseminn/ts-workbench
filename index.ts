@@ -1,1 +1,1 @@
-export { hello } from './src/hello';
+export { useCount } from './src/useCount';

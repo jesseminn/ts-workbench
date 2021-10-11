@@ -10,7 +10,7 @@ const config: Configuration = {
     mode: 'development',
     devtool: 'inline-source-map',
     entry: {
-        index: path.resolve(__dirname, './index.ts'),
+        index: path.resolve(__dirname, './index.tsx'),
     },
     output: {
         path: path.resolve(__dirname, 'dist'),

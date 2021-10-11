@@ -9,7 +9,7 @@ const tsconfig = loadTSConfig();
 const config: Config.InitialOptions = {
     preset: 'ts-jest',
     verbose: true,
-    testEnvironment: 'node',
+    testEnvironment: 'jsdom',
     moduleNameMapper: pathsToModuleNameMapper(tsconfig.compilerOptions.paths, {
         prefix: '<rootDir>/',
     }),

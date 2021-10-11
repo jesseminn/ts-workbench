@@ -25,7 +25,10 @@
         // # Advanced
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+
+        // # React
+        "jsx": "react"
     },
     "include": ["./src/**/*", "./index.ts"],
     "exclude": ["./src/**/*.test.ts"]
