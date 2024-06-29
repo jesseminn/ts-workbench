@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        // # Project Options
+        "allowJs": true,
+        "checkJs": true,
+        "lib": ["DOM", "ESNext"],
+        "module": "NodeNext",
+        "outDir": "dist",
+        "removeComments": true,
+        "target": "ESNext",
+        "declaration": true,
+        "sourceMap": true,
+
+        // # Strict Checks
+        "strict": true,
+
+        // # Module Resolution
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "moduleResolution": "NodeNext",
+
+        // # Advanced
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true
+    },
+    "include": ["./src/**/*.ts"],
+    "exclude": ["./src/**/*.test.ts"]
+}
