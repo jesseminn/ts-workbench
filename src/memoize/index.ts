@@ -1,4 +1,5 @@
 import { Cached } from '../cached';
+import { serialize } from '../serialize';
 
 export type MemoizeOptions<I extends any[]> = {
     keyExtractor?: (...args: I) => string;
@@ -22,7 +23,7 @@ export const memoize = <I extends any[], O>(fn: (...args: I) => O, options?: Mem
         options?.debug?.enabled ? console.log(`[${options.debug.label}(${key})] ${message}`) : undefined;
 
     const keyExtractor = (...args: I) =>
-        typeof options?.keyExtractor === 'function' ? options.keyExtractor(...args) : JSON.stringify(args);
+        typeof options?.keyExtractor === 'function' ? options.keyExtractor(...args) : serialize(args);
 
     const memoizedFn: MemoizedFn<I, O> = (...args: I) => {
         const key = keyExtractor(...args);
