@@ -27,57 +27,47 @@ import {
 export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T {
     // ----- primitive types ----- //
     if ($string.validate(cooked)) {
-        const unwrapped = $string.unwrap(cooked);
-        return JSON.parse(unwrapped);
+        return $string.parse(cooked) as T;
     }
 
     if ($nan.validate(cooked)) {
-        return NaN as T;
+        return $nan.parse() as T;
     }
 
     if ($infinity.validate(cooked)) {
-        return Infinity as T;
+        return $infinity.parse() as T;
     }
 
     if ($negative_infinity.validate(cooked)) {
-        return -Infinity as T;
+        return $negative_infinity.parse() as T;
     }
 
     if ($negative_zero.validate(cooked)) {
-        return -0 as T;
+        return $negative_zero.parse() as T;
     }
 
     if ($number.validate(cooked)) {
-        const str = $number.unwrap(cooked);
-        return JSON.parse(str);
+        return $number.parse(cooked) as T;
     }
 
     if ($bigint.validate(cooked)) {
-        const str = $bigint.unwrap(cooked);
-        return BigInt(Number(str)) as T;
+        return $bigint.parse(cooked) as T;
     }
 
     if ($boolean.validate(cooked)) {
-        const str = $boolean.unwrap(cooked);
-        return JSON.parse(str) as T;
+        return $boolean.parse(cooked) as T;
     }
 
     if ($symbol.validate(cooked)) {
-        const str = $symbol.unwrap(cooked);
-        // e.g. 'Symbol(foo)'
-        const parsed = JSON.parse(str);
-        const key = /^Symbol\((.*)\)$/.exec(parsed)?.[1];
-        // try to get symbol from global symbol registry
-        // if not found, create one
-        return Symbol.for(key!) as T;
+        return $symbol.parse(cooked) as T;
     }
 
     if ($undefined.validate(cooked)) {
-        return undefined as T;
+        return $undefined.parse() as T;
     }
 
     if ($null.validate(cooked)) {
-        return null as T;
+        return $null.parse() as T;
     }
 
     // ----- reference types ----- //
@@ -90,27 +80,23 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     const map: ReferenceMap = initial ? new Map<number, object>() : _map;
 
     if ($date.validate(cooked)) {
-        const unwrapped = $date.unwrap(cooked);
-        const parsed = JSON.parse(unwrapped);
+        const parsed = $date.parse(cooked);
         return new Date(parsed) as T;
     }
 
     if ($regexp.validate(cooked)) {
-        const unwrapped = $regexp.unwrap(cooked);
-        const parsed = JSON.parse(unwrapped);
+        const parsed = $regexp.parse(cooked);
         return new RegExp(parsed) as T;
     }
 
     if ($map.validate(cooked)) {
-        const unwrapped = $map.unwrap(cooked);
-        const parsed = JSON.parse(unwrapped);
-        const object = deserialize<Record<string, string>>(parsed, map);
-        const entries = Object.entries(object).map(([key, value]) => {
+        const parsed = $map.parse(cooked);
+        const entries = Object.entries(parsed).map(([key, value]) => {
             const _key = deserialize(key, map);
             const _value = deserialize(value, map);
             return [_key, _value] as const;
         });
-        const result = new Map(entries) as object;
+        const result = new Map(entries);
         map.set(id, result);
         if (initial) {
             revive(result, map);
@@ -119,10 +105,9 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     }
 
     if ($set.validate(cooked)) {
-        const unwrapped = $set.unwrap(cooked);
-        const parsed = JSON.parse(unwrapped);
-        const array = deserialize(parsed, map) as unknown[];
-        const result = new Set(array) as object;
+        const parsed = $set.parse(cooked);
+        const arr = parsed.map(itr => deserialize(itr, map));
+        const result = new Set(arr);
         map.set(id, result);
         if (initial) {
             revive(result, map);
@@ -131,9 +116,8 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     }
 
     if ($array.validate(cooked)) {
-        const unwrapped = $array.unwrap(cooked);
-        const parsed = JSON.parse(unwrapped) as string[];
-        const result = parsed.map(itr => deserialize(itr, map)) as object;
+        const parsed = $array.parse(cooked);
+        const result = parsed.map(itr => deserialize(itr, map));
         map.set(id, result);
         if (initial) {
             revive(result, map);
@@ -142,8 +126,7 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     }
 
     if ($object.validate(cooked)) {
-        const unwrapped = $object.unwrap(cooked);
-        const parsed = JSON.parse(unwrapped);
+        const parsed = $object.parse(cooked);
         const result = Object.entries(parsed).reduce<Record<string, unknown>>((acc, [key, value]) => {
             const _key = deserialize<string>(key, map);
             const _value = deserialize(value as any, map);
@@ -159,13 +142,13 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     }
 
     if ($unsupported_object.validate(cooked)) {
-        const unwrapped = $unsupported_object.unwrap(cooked);
-        const parsed = JSON.parse(unwrapped);
+        const parsed = $unsupported_object.parse(cooked);
+        map.set(id, parsed);
         return parsed as T;
     }
 
     if ($function.validate(cooked)) {
-        const str = $function.unwrap(cooked);
+        const str = $function.parse(cooked);
         // https://stackoverflow.com/a/28011280
         let result: any;
         // FIXME: handle different types of function

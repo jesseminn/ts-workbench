@@ -62,6 +62,12 @@ describe('serialize', () => {
         const set = new Set();
         set.add('foo');
 
+        class Unsupported {}
+        const unsupported = new Unsupported();
+
+        const circular: Record<string, any> = { foo: 42 };
+        circular.self = circular;
+
         const obj = {
             // primitive types
             str: 'foo',
@@ -73,6 +79,7 @@ describe('serialize', () => {
             null: null,
             undefined: undefined,
             [Symbol('foo')]: Symbol('bar'),
+            unsupported: [unsupported, unsupported],
 
             // refenence types
             arr: [1, { foo: 'bar' }],
@@ -81,6 +88,8 @@ describe('serialize', () => {
             obj: {
                 bar: 44,
             },
+
+            // TODO: function
             // fn(x: number) {
             //     console.log('call fn', x);
             //     alert(x);

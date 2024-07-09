@@ -1,5 +1,4 @@
 import { isPOJO } from './utils';
-import { uid } from '../uid';
 import {
     $array,
     $bigint,
@@ -39,33 +38,33 @@ type Context = {
 export function serialize(raw: unknown, _ctx?: Context): string {
     switch (typeof raw) {
         case 'string':
-            return $string.wrap(JSON.stringify(raw));
+            return $string.create(raw);
         case 'number':
             if (isNaN(raw)) {
-                return $nan.wrap();
+                return $nan.create();
             }
             if (Object.is(raw, Infinity)) {
-                return $infinity.wrap();
+                return $infinity.create();
             }
             if (Object.is(raw, -Infinity)) {
-                return $negative_infinity.wrap();
+                return $negative_infinity.create();
             }
             // https://stackoverflow.com/a/7223395
             if (Object.is(raw, -0)) {
-                return $negative_zero.wrap();
+                return $negative_zero.create();
             }
-            return $number.wrap(JSON.stringify(raw));
+            return $number.create(raw);
         case 'bigint':
-            return $bigint.wrap(raw.toString());
+            return $bigint.create(raw);
         case 'boolean':
-            return $boolean.wrap(JSON.stringify(raw));
+            return $boolean.create(raw);
         case 'symbol':
-            return $symbol.wrap(JSON.stringify(raw.toString()));
+            return $symbol.create(raw);
         case 'undefined':
-            return $undefined.wrap();
+            return $undefined.create();
         case 'object':
             if (raw === null) {
-                return $null.wrap();
+                return $null.create();
             }
 
             // init ctx
@@ -74,7 +73,7 @@ export function serialize(raw: unknown, _ctx?: Context): string {
             if (ctx.map.has(raw)) {
                 // if the object is already in the map, return the reference id as placeholder
                 id = ctx.map.get(raw)!;
-                return $placeholder.wrap(JSON.stringify(id));
+                return $placeholder.create(id);
             } else {
                 // the object is not in the map, store the object and id pair
                 ctx.count += 1;
@@ -84,30 +83,42 @@ export function serialize(raw: unknown, _ctx?: Context): string {
 
             if (raw instanceof Map) {
                 const entries = Array.from(raw.entries());
-                const obj = entries.reduce<Record<string, unknown>>((acc, [key, value]) => {
-                    acc[serialize(key, ctx)] = serialize(value, ctx);
-                    return acc;
-                }, {});
-                return $map.wrap(JSON.stringify(serialize(obj, ctx)), id);
+                const obj = entries
+                    .map(([key, value]) => {
+                        return [serialize(key, ctx), serialize(value, ctx)] as const;
+                    })
+                    .sort(([a], [b]) => {
+                        return a.localeCompare(b);
+                    })
+                    .reduce<Record<string, string>>((acc, [key, value]) => {
+                        acc[key] = value;
+                        return acc;
+                    }, {});
+                return $map.create(obj, id);
             }
 
             if (raw instanceof Set) {
-                const array = Array.from(raw).sort((a, b) => {
-                    return serialize(a, ctx).localeCompare(serialize(b, ctx));
-                });
-                return $set.wrap(JSON.stringify(serialize(array, ctx)), id);
+                const array = Array.from(raw)
+                    .map(itr => serialize(itr, ctx))
+                    .sort((a, b) => {
+                        return a.localeCompare(b);
+                    });
+                return $set.create(array, id);
             }
 
             if (Array.isArray(raw)) {
-                return $array.wrap(JSON.stringify(raw.map(itr => serialize(itr, ctx))), id);
+                return $array.create(
+                    raw.map(itr => serialize(itr, ctx)),
+                    id,
+                );
             }
 
             if (raw instanceof Date) {
-                return $date.wrap(JSON.stringify(raw.getTime()), id);
+                return $date.create(raw.getTime(), id);
             }
 
             if (raw instanceof RegExp) {
-                return $regexp.wrap(JSON.stringify(raw.source), id);
+                return $regexp.create(raw.source, id);
             }
 
             if (isPOJO(raw)) {
@@ -129,12 +140,12 @@ export function serialize(raw: unknown, _ctx?: Context): string {
                     // https://stackoverflow.com/a/51169
                     return a.localeCompare(b);
                 });
-                const obj = keys.reduce<Record<string | symbol, any>>((acc, key) => {
+                const obj = keys.reduce<Record<string | symbol, string>>((acc, key) => {
                     const value = raw[key as keyof typeof raw];
                     acc[serialize(key, ctx)] = serialize(value, ctx);
                     return acc;
                 }, {});
-                return $object.wrap(JSON.stringify(obj), id);
+                return $object.create(obj, id);
             }
 
             // Handle unsupported object
@@ -145,8 +156,8 @@ export function serialize(raw: unknown, _ctx?: Context): string {
             } else {
                 constructorName = 'Unknown';
             }
-            const placeholder = `${constructorName} {}#${uid(raw)}`;
-            return $unsupported_object.wrap(JSON.stringify(placeholder), id);
+            const display = `${constructorName} {}#${id}`;
+            return $unsupported_object.create(display, id);
         case 'function': {
             // FIXME: dupliated code
             const ctx = _ctx || { map: new WeakMap(), count: 0 };
@@ -154,7 +165,7 @@ export function serialize(raw: unknown, _ctx?: Context): string {
             if (ctx.map.has(raw)) {
                 // if the object is already in the map, return the reference id
                 id = ctx.map.get(raw)!;
-                return $placeholder.wrap(JSON.stringify(id));
+                return $placeholder.create(id);
             } else {
                 // the object is not in the map, store the object and id pair
                 ctx.count += 1;
@@ -162,7 +173,7 @@ export function serialize(raw: unknown, _ctx?: Context): string {
                 ctx.map.set(raw, id);
             }
 
-            return $function.wrap(raw.toString(), id);
+            return $function.create(raw.toString(), id);
         }
     }
 }
