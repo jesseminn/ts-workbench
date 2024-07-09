@@ -1,22 +1,28 @@
 import { isPOJO } from './utils';
-import { $reference } from './tags';
+import { $placeholder } from './tags';
 
-export const revive = (x: object, map: Map<string, object>) => {
+/**
+ * key: reference id
+ * value: referenced object
+ */
+export type ReferenceMap = Map<number, object>;
+
+export const revive = (x: object, map: ReferenceMap) => {
     if (x instanceof Map) {
         Array.from(x.entries()).forEach(([key, value]) => {
             let _k = key;
-            if (typeof key === 'string' && $reference.validate(key)) {
-                const id = JSON.parse($reference.unwrap(key));
-                _k = map.get(`${id}`);
+            if (typeof key === 'string' && $placeholder.validate(key)) {
+                const id = JSON.parse($placeholder.unwrap(key));
+                _k = map.get(id);
             }
             if (typeof key === 'object' && key !== null) {
                 revive(key, map);
             }
 
             let _v = value;
-            if (typeof value === 'string' && $reference.validate(value)) {
-                const id = JSON.parse($reference.unwrap(value));
-                _v = map.get(`${id}`);
+            if (typeof value === 'string' && $placeholder.validate(value)) {
+                const id = JSON.parse($placeholder.unwrap(value));
+                _v = map.get(id);
             }
             if (typeof value === 'object' && value !== null) {
                 revive(value, map);
@@ -30,9 +36,9 @@ export const revive = (x: object, map: Map<string, object>) => {
         Array.from(x).forEach(itr => {
             let _v = itr;
             x.delete(itr);
-            if (typeof itr === 'string' && $reference.validate(itr)) {
-                const id = JSON.parse($reference.unwrap(itr));
-                _v = map.get(`${id}`);
+            if (typeof itr === 'string' && $placeholder.validate(itr)) {
+                const id = JSON.parse($placeholder.unwrap(itr));
+                _v = map.get(id);
             }
             if (typeof itr === 'object' && itr !== null) {
                 revive(itr, map);
@@ -43,9 +49,9 @@ export const revive = (x: object, map: Map<string, object>) => {
 
     if (Array.isArray(x)) {
         x.forEach((itr, i) => {
-            if (typeof itr === 'string' && $reference.validate(itr)) {
-                const id = JSON.parse($reference.unwrap(itr));
-                x[i] = map.get(`${id}`);
+            if (typeof itr === 'string' && $placeholder.validate(itr)) {
+                const id = JSON.parse($placeholder.unwrap(itr));
+                x[i] = map.get(id);
             }
             if (typeof itr === 'object' && itr !== null) {
                 revive(itr, map);
@@ -57,9 +63,9 @@ export const revive = (x: object, map: Map<string, object>) => {
         Reflect.ownKeys(x)
             .map(key => [key, (x as any)[key]])
             .forEach(([key, value]) => {
-                if (typeof value === 'string' && $reference.validate(value)) {
-                    const id = JSON.parse($reference.unwrap(value));
-                    (x as any)[key] = map.get(`${id}`);
+                if (typeof value === 'string' && $placeholder.validate(value)) {
+                    const id = JSON.parse($placeholder.unwrap(value));
+                    (x as any)[key] = map.get(id);
                 }
                 if (typeof value === 'object' && value !== null) {
                     revive(value, map);

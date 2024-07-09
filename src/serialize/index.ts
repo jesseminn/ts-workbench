@@ -1,15 +1,29 @@
 import { serialize as _serialize } from './serialize';
 import { deserialize as _deserialize } from './deserialize';
 
-// Just don't want to expose the second argument
+// Just expose the first arg
 export function serialize(raw: unknown) {
     return _serialize(raw);
 }
 
-// Just don't want to expose the second argument
+// Just expose the first arg
 export function deserialize<T = unknown>(cooked: string): T {
     return _deserialize(cooked);
 }
+
+// function fn() {}
+// const arr = [fn, fn];
+// const s = serialize(arr);
+// console.log(s);
+// const d = deserialize(s);
+// console.log(d, d[0] === d[1]);
+
+// const obj = {};
+// const arr = [obj, obj];
+// const s = serialize(arr);
+// console.log(s);
+// const d = deserialize(s);
+// console.log(d, d[0] === d[1]);
 
 // TODO: make this work
 // const a = { a: 1, b: 2 };
@@ -24,6 +38,8 @@ export function deserialize<T = unknown>(cooked: string): T {
 // console.log('y', y);
 // // try to make this work
 // console.log(x === y);
+// const _x = deserialize(x);
+// console.log(_x);
 
 // const obj: Record<string, any> = {};
 // obj.bar = obj;

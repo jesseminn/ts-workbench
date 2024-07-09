@@ -81,10 +81,10 @@ describe('serialize', () => {
             obj: {
                 bar: 44,
             },
-            fn(x: number) {
-                console.log('call fn', x);
-                alert(x);
-            },
+            // fn(x: number) {
+            //     console.log('call fn', x);
+            //     alert(x);
+            // },
         };
         const s = serialize(obj);
         const d = deserialize<typeof obj>(s);

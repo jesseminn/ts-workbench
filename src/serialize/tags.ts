@@ -40,15 +40,21 @@ class SingletonPrimitiveTag extends PrimitiveTag {
     }
 }
 
+class PlaceholderTag extends PrimitiveTag {
+    constructor(tag?: string) {
+        super(tag);
+    }
+}
+
 class ReferenceTag extends BaseTag {
-    constructor(readonly tag: string) {
+    constructor(readonly tag?: string) {
         super(tag);
     }
     validate(v: string) {
         const stripped = ID.strip(v);
         return stripped.startsWith(this.start) && stripped.endsWith(this.end);
     }
-    wrap(v: string, id: string) {
+    wrap(v: string, id: number) {
         return ID.bind(id, `${this.start}${v}${this.end}`);
     }
     unwrap(v: string) {
@@ -77,4 +83,4 @@ export const $unsupported_object = new ReferenceTag('__UNSUPPORTED_OBJECT__');
 export const $function = new ReferenceTag('__FUNCTION__');
 export const $date = new ReferenceTag('__DATE__');
 export const $regexp = new ReferenceTag('__REGEXP__');
-export const $reference = new ReferenceTag('__REFERENCE__');
+export const $placeholder = new PlaceholderTag('__PLACEHOLDER__');

@@ -14,7 +14,7 @@ import {
     $null,
     $number,
     $object,
-    $reference,
+    $placeholder,
     $regexp,
     $set,
     $string,
@@ -23,7 +23,20 @@ import {
     $unsupported_object,
 } from './tags';
 
-export function serialize(raw: unknown, map?: WeakMap<object, number>, count = 0): string {
+type Context = {
+    /**
+     * a map to map an object (reference type) to a reference id
+     * the same object should always have the same reference id
+     */
+    map: WeakMap<object, number>;
+    /**
+     * the current count, increments when a new reference pair added to the map
+     * used to generate reference id
+     */
+    count: number;
+};
+
+export function serialize(raw: unknown, _ctx?: Context): string {
     switch (typeof raw) {
         case 'string':
             return $string.wrap(JSON.stringify(raw));
@@ -55,45 +68,46 @@ export function serialize(raw: unknown, map?: WeakMap<object, number>, count = 0
                 return $null.wrap();
             }
 
-            // create an reference id for reference types
-            // the same object should always have the same reference id
-            // TODO: try simplify this part
-            const _map = map || new WeakMap<object, number>();
-            let _count: number;
-            if (_map.has(raw)) {
-                _count = _map.get(raw)!;
-                return $reference.wrap(JSON.stringify(_count), `${_count}`);
+            // init ctx
+            const ctx = _ctx || { map: new WeakMap(), count: 0 };
+            let id: number;
+            if (ctx.map.has(raw)) {
+                // if the object is already in the map, return the reference id as placeholder
+                id = ctx.map.get(raw)!;
+                return $placeholder.wrap(JSON.stringify(id));
             } else {
-                _count = count + 1;
-                _map.set(raw, _count);
+                // the object is not in the map, store the object and id pair
+                ctx.count += 1;
+                id = ctx.count;
+                ctx.map.set(raw, id);
             }
 
             if (raw instanceof Map) {
                 const entries = Array.from(raw.entries());
                 const obj = entries.reduce<Record<string, unknown>>((acc, [key, value]) => {
-                    acc[serialize(key, _map)] = serialize(value, _map, _count);
+                    acc[serialize(key, ctx)] = serialize(value, ctx);
                     return acc;
                 }, {});
-                return $map.wrap(JSON.stringify(serialize(obj, _map, _count)), `${_count}`);
+                return $map.wrap(JSON.stringify(serialize(obj, ctx)), id);
             }
 
             if (raw instanceof Set) {
                 const array = Array.from(raw).sort((a, b) => {
-                    return serialize(a, _map).localeCompare(serialize(b, _map, _count));
+                    return serialize(a, ctx).localeCompare(serialize(b, ctx));
                 });
-                return $set.wrap(JSON.stringify(serialize(array, _map, _count)), `${_count}`);
+                return $set.wrap(JSON.stringify(serialize(array, ctx)), id);
             }
 
             if (Array.isArray(raw)) {
-                return $array.wrap(JSON.stringify(raw.map(itr => serialize(itr, _map, _count))), `${_count}`);
+                return $array.wrap(JSON.stringify(raw.map(itr => serialize(itr, ctx))), id);
             }
 
             if (raw instanceof Date) {
-                return $date.wrap(JSON.stringify(raw.getTime()), `${_count}`);
+                return $date.wrap(JSON.stringify(raw.getTime()), id);
             }
 
             if (raw instanceof RegExp) {
-                return $regexp.wrap(JSON.stringify(raw.source), `${_count}`);
+                return $regexp.wrap(JSON.stringify(raw.source), id);
             }
 
             if (isPOJO(raw)) {
@@ -117,10 +131,10 @@ export function serialize(raw: unknown, map?: WeakMap<object, number>, count = 0
                 });
                 const obj = keys.reduce<Record<string | symbol, any>>((acc, key) => {
                     const value = raw[key as keyof typeof raw];
-                    acc[serialize(key, _map, _count)] = serialize(value, _map, _count);
+                    acc[serialize(key, ctx)] = serialize(value, ctx);
                     return acc;
                 }, {});
-                return $object.wrap(JSON.stringify(obj), `${_count}`);
+                return $object.wrap(JSON.stringify(obj), id);
             }
 
             // Handle unsupported object
@@ -132,9 +146,23 @@ export function serialize(raw: unknown, map?: WeakMap<object, number>, count = 0
                 constructorName = 'Unknown';
             }
             const placeholder = `${constructorName} {}#${uid(raw)}`;
-            return $unsupported_object.wrap(JSON.stringify(placeholder), `${_count}`);
-        case 'function':
-            // TODO: ref like 'object' type
-            return $function.wrap(raw.toString(), '');
+            return $unsupported_object.wrap(JSON.stringify(placeholder), id);
+        case 'function': {
+            // FIXME: dupliated code
+            const ctx = _ctx || { map: new WeakMap(), count: 0 };
+            let id: number;
+            if (ctx.map.has(raw)) {
+                // if the object is already in the map, return the reference id
+                id = ctx.map.get(raw)!;
+                return $placeholder.wrap(JSON.stringify(id));
+            } else {
+                // the object is not in the map, store the object and id pair
+                ctx.count += 1;
+                id = ctx.count;
+                ctx.map.set(raw, id);
+            }
+
+            return $function.wrap(raw.toString(), id);
+        }
     }
 }
