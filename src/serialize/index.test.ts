@@ -45,41 +45,50 @@ describe('serialize', () => {
         expect(d).toBeInstanceOf(Map);
     });
 
-    it('should handle circular references', () => {
+    it('should handle circular references of a POJO', () => {
         const obj: Record<string, any> = { foo: 'bar' };
         obj.self = obj;
-        serialize(obj);
+        const s = serialize(obj);
+        const d = deserialize<typeof obj>(s);
+        expect(d).toStrictEqual(d.self);
     });
 
-    const map = new Map();
-    map.set('foo', 42);
-    map.set('bar', { baz: 66 });
-    map.set({ yee: true }, [123]);
+    it('should serialize and deserialize a complex object', () => {
+        const map = new Map();
+        map.set('foo', 42);
+        map.set('bar', { baz: 66 });
+        map.set({ yee: true }, [123]);
 
-    const set = new Set();
-    set.add('foo');
+        const set = new Set();
+        set.add('foo');
 
-    const obj = {
-        // b: 'foo',
-        // a: 42,
-        // c: NaN,
-        // d: 99n,
-        // e: false,
-        // arr: [1, false, { foo: 999 }],
-        // s: set,
-        // m: map,
-        // obj: {
-        //     bar: 44,
-        // },
-        // fn(x: number) {
-        //     console.log('call fn', x);
-        //     alert(x);
-        // },
-        // neg: -Infinity,
-        [Symbol('foo')]: 444, // not supported (yet)
-    };
-    const serialized = serialize(obj);
-    console.log('serialized:', serialized);
-    const deserialized = deserialize<typeof obj>(serialized);
-    console.log('deserialized:', deserialized);
+        const obj = {
+            // primitive types
+            str: 'foo',
+            num: 42,
+            nan: NaN,
+            bigint: 99n,
+            boolean: false,
+            negInf: -Infinity,
+            null: null,
+            undefined: undefined,
+            [Symbol('foo')]: Symbol('bar'),
+
+            // refenence types
+            arr: [1, { foo: 'bar' }],
+            set: set,
+            map: map,
+            obj: {
+                bar: 44,
+            },
+            fn(x: number) {
+                console.log('call fn', x);
+                alert(x);
+            },
+        };
+        const s = serialize(obj);
+        const d = deserialize<typeof obj>(s);
+        console.log(d);
+        expect(d).toBeTruthy();
+    });
 });

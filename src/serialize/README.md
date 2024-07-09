@@ -1,5 +1,11 @@
 # Serialize & deserialize
 
+Should not be confused with Node.js `v8.serialize`, which returns a `Buffer`
+
+-   Ref:
+-   https://github.com/yahoo/serialize-javascript
+-   https://github.com/facebookexperimental/Recoil/blob/main/packages/shared/util/Recoil_stableStringify.js
+
 ## TODO
 
 also list what are not supported by JSON.stringify
@@ -116,6 +122,13 @@ References
     In the example, `o2` is not a POJO.
 
 -   This article provides the solution https://adamcoster.com/blog/pojo-detector
+
+## JSON reserved chars
+
+JSON reserved chars https://stackoverflow.com/a/27516892
+
+Usually `JSON.stringify` handles this,
+will only occur if `JSON.parse` a string which is NOT produced by `JSON.stringify`,
 
 ## Others
 
