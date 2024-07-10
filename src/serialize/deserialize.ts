@@ -148,13 +148,38 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     }
 
     if ($function.validate(cooked)) {
-        const str = $function.parse(cooked);
-        // https://stackoverflow.com/a/28011280
-        let result: any;
-        // FIXME: handle different types of function
-        eval(`result = ${str}`);
-        map.set(id, result);
-        return result as T;
+        const parsed = $function.parse(cooked);
+        const name = /(?!function)(\b[a-zA-Z_$][a-zA-Z0-9_$]*\b)\(.*?\)/.exec(parsed)?.[1] || 'anonymous';
+
+        // a workaround to mimic a closure
+        function caller(ctx?: Record<string, unknown>) {
+            let result: any;
+            let functionString = '';
+
+            const method_regex = /^(async\s+)?(?!function)((\b[a-zA-Z_$][a-zA-Z0-9_$]*\b)\(.*?\)\s*\{[\S\s]*?\})$/;
+            const matched = method_regex.exec(parsed);
+            if (matched) {
+                functionString = `${matched[1] || ''} function ${matched[2]}`;
+            } else {
+                functionString = parsed;
+            }
+
+            if (ctx) {
+                // replace a *free variable* to a *bound variable* from `ctx`
+                Object.keys(ctx).forEach(key => {
+                    const regex = new RegExp(`(?<![ '"\`])\\b${key}\\b(?!['"\` ])`, 'g');
+                    functionString = functionString.replace(regex, `ctx.${key}`);
+                });
+            }
+
+            eval(`result = ${functionString}`);
+            return result;
+        }
+        // change the name of the exposed function
+        // https://stackoverflow.com/a/33067824
+        Object.defineProperty(caller, 'name', { value: `${name}_caller` });
+        map.set(id, caller);
+        return caller as T;
     }
 
     if ($placeholder.validate(cooked)) {

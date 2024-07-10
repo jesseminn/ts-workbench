@@ -1,12 +1,6 @@
 import { ID } from './utils';
 import { uid } from '../uid';
 
-// TODO
-// `wrap` method should have JSON.stringify
-// rename `wrap` to `stringify`
-// `unwrap` method should have JSON.parse
-// rename `unwrap` to `parse`
-
 const debug = true;
 
 class BaseTag {
@@ -132,7 +126,7 @@ export const $map = new ReferenceTag<Record<string, string>>('__MAP__');
 export const $set = new ReferenceTag<Array<string>>('__SET__');
 export const $object = new ReferenceTag<Record<string | symbol, string>>('__OBJECT__');
 export const $unsupported_object = new ReferenceTag('__UNSUPPORTED_OBJECT__');
-export const $function = new ReferenceTag('__FUNCTION__');
+export const $function = new ReferenceTag<string>('__FUNCTION__');
 export const $date = new ReferenceTag<number>('__DATE__');
 export const $regexp = new ReferenceTag<string>('__REGEXP__');
 export const $placeholder = new PlaceholderTag('__PLACEHOLDER__');

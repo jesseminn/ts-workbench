@@ -1,5 +1,9 @@
 # Serialize & deserialize
 
+[Definition from MDN](https://developer.mozilla.org/en-US/docs/Glossary/Serialization)
+
+> The process whereby an object or data structure is translated into a format suitable for transfer over a network, or storage (e.g. in an array buffer or file format).
+
 Should not be confused with Node.js `v8.serialize`, which returns a `Buffer`
 
 -   Ref:
@@ -8,9 +12,16 @@ Should not be confused with Node.js `v8.serialize`, which returns a `Buffer`
 
 ## TODO
 
-also list what are not supported by JSON.stringify
-deserialize function
-circular reference
+also list what are not supported by `JSON.stringify`
+also list what are not supported by `serialize-javascript`
+see what can be done by using `replacer` with `JSON.stringify` and `reviver` with `JSON.parse`
+
+This article points out some features what `JSON.stringify` lacks
+https://www.turing.com/kb/implementing-json-serialization-in-js
+
+handle URL object
+
+handle serializing/deserializing native functions, e.g. `alert`
 
 ## Types can be deserialized after being serialized
 
@@ -57,7 +68,7 @@ WeakSet?
 
 Objects which are NOT pojo
 
-### Why `toJSON` is NOT used
+### Why `toJSON` is NOT supported
 
 `JSON.stringify` will use the value returned by `toJSON` method,
 `toJSON` is not support by `serialize` because the returned string from `toJSON` is not
@@ -71,7 +82,7 @@ const s = JSON.stringify(d); // '"2024-07-06T14:25:50.471Z"'
 const d = JSON.parse(s); // '2024-07-06T14:25:50.471Z', not the original date object
 ```
 
-## Keys are sorted
+## Make order stable
 
 ```ts
 const x = { a: '', b: '' };

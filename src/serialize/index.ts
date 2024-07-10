@@ -11,12 +11,26 @@ export function deserialize<T = unknown>(cooked: string): T {
     return _deserialize(cooked);
 }
 
-// function fn() {}
-// const arr = [fn, fn];
-// const s = serialize(arr);
+// let foo = 42;
+// const obj = {
+//     async fn() {
+//         console.log(foo);
+//     },
+// };
+// const s = serialize(obj);
+// const d = deserialize(s);
+// console.log(d);
+// d.fn({ foo: 66 })();
+
+// const foo = 42;
+// function fn() {
+//     console.log(`this is the value of foo: ${foo}`);
+// }
+// const s = serialize(fn);
 // console.log(s);
 // const d = deserialize(s);
-// console.log(d, d[0] === d[1]);
+// console.log(d);
+// d({ foo })();
 
 // const obj = {};
 // const arr = [obj, obj];
