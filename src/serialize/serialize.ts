@@ -20,6 +20,7 @@ import {
     $symbol,
     $undefined,
     $unsupported_object,
+    $url,
 } from './tags';
 
 type Context = {
@@ -119,6 +120,10 @@ export function serialize(raw: unknown, _ctx?: Context): string {
 
             if (raw instanceof RegExp) {
                 return $regexp.create(raw.source, id);
+            }
+
+            if (raw instanceof URL) {
+                return $url.create(raw.toJSON(), id);
             }
 
             if (isPOJO(raw)) {

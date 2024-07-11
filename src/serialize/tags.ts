@@ -109,7 +109,6 @@ class ReferenceTag<T> extends BaseTag {
     }
 }
 
-// TODO: generate tag string dynamically in production
 export const $string = new PrimitiveTag<string>('__STRING__');
 export const $number = new PrimitiveTag<number>('__NUMBER__');
 export const $infinity = new SingletonPrimitiveTag('__INFITITY__', Infinity);
@@ -129,4 +128,5 @@ export const $unsupported_object = new ReferenceTag('__UNSUPPORTED_OBJECT__');
 export const $function = new ReferenceTag<string>('__FUNCTION__');
 export const $date = new ReferenceTag<number>('__DATE__');
 export const $regexp = new ReferenceTag<string>('__REGEXP__');
+export const $url = new ReferenceTag<string>('__URL__');
 export const $placeholder = new PlaceholderTag('__PLACEHOLDER__');

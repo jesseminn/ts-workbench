@@ -21,6 +21,7 @@ import {
     $symbol,
     $undefined,
     $unsupported_object,
+    $url,
 } from './tags';
 
 // can be memoized?
@@ -79,79 +80,46 @@ export function deserialize<T = unknown>(
 
     // the very first call to `deserialize` won't have `_map` arg
     const initial = !_map;
-
     // prepare reference id & reference map
     const id = Number(ID.parse(cooked));
     const map: ReferenceMap = _map || new Map<number, object>();
     const path = _path || [];
     const paths = _paths || [];
 
+    // ----- reference types which won't be a tree ----- //
+
     if ($date.validate(cooked)) {
         const parsed = $date.parse(cooked);
-        return new Date(parsed) as T;
+        const date = new Date(parsed);
+        map.set(id, date);
+        return date as T;
     }
 
     if ($regexp.validate(cooked)) {
         const parsed = $regexp.parse(cooked);
-        return new RegExp(parsed) as T;
+        const regexp = new RegExp(parsed);
+        map.set(id, regexp);
+        return regexp as T;
     }
 
-    if ($map.validate(cooked)) {
-        const parsed = $map.parse(cooked);
-        const entries = Object.entries(parsed).map(([key, value]) => {
-            const _key = deserialize(key, map);
-            const _value = deserialize(value, map, [...path, key], paths);
-            return [_key, _value] as const;
-        });
-        const result = new Map(entries);
-        map.set(id, result);
-        if (initial) {
-            revive(result, map, paths);
-        }
-        return result as T;
-    }
-
-    if ($set.validate(cooked)) {
-        const parsed = $set.parse(cooked);
-        const arr = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
-        const result = new Set(arr);
-        map.set(id, result);
-        if (initial) {
-            revive(result, map, paths);
-        }
-        return result as T;
-    }
-
-    if ($array.validate(cooked)) {
-        const parsed = $array.parse(cooked);
-        const result = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
-        map.set(id, result);
-        if (initial) {
-            revive(result, map, paths);
-        }
-        return result as T;
-    }
-
-    if ($object.validate(cooked)) {
-        const parsed = $object.parse(cooked);
-        const result = Object.entries(parsed).reduce<Record<string, unknown>>((acc, [key, value]) => {
-            const _key = deserialize<string>(key, map, [...paths], paths);
-            const _value = deserialize(value as any, map, [...path, _key], paths);
-
-            acc[_key] = _value;
-            return acc;
-        }, {}) as object;
-        map.set(id, result);
-        if (initial) {
-            revive(result, map, paths);
-        }
-        return result as T;
+    if ($url.validate(cooked)) {
+        const parsed = $url.parse(cooked);
+        const url = new URL(parsed);
+        map.set(id, url);
+        return url as T;
     }
 
     if ($unsupported_object.validate(cooked)) {
         const parsed = $unsupported_object.parse(cooked);
         map.set(id, parsed);
         return parsed as T;
+    }
+
+    if ($placeholder.validate(cooked)) {
+        // Just return the serialized string, will replace it with the real value
+        // in `revive` process
+        paths.push([...path, cooked]);
+        return cooked as T;
     }
 
     if ($function.validate(cooked)) {
@@ -189,11 +157,58 @@ export function deserialize<T = unknown>(
         return caller as T;
     }
 
-    if ($placeholder.validate(cooked)) {
-        // Just return the serialized string, will replace it with the real value
-        // in `revive` process
-        paths.push([...path, cooked]);
-        return cooked as T;
+    // ----- reference types which could be a tree ----- //
+
+    if ($map.validate(cooked)) {
+        const parsed = $map.parse(cooked);
+        const entries = Object.entries(parsed).map(([key, value]) => {
+            const _key = deserialize(key, map, [...path, key], paths);
+            const _value = deserialize(value, map, [...path, key], paths);
+            return [_key, _value] as const;
+        });
+        const result = new Map(entries);
+        map.set(id, result);
+        if (initial) {
+            revive(result, map, paths);
+        }
+        return result as T;
+    }
+
+    if ($set.validate(cooked)) {
+        const parsed = $set.parse(cooked);
+        const arr = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
+        const result = new Set(arr);
+        map.set(id, result);
+        if (initial) {
+            revive(result, map, paths);
+        }
+        return result as T;
+    }
+
+    if ($array.validate(cooked)) {
+        const parsed = $array.parse(cooked);
+        const result = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
+        map.set(id, result);
+        if (initial) {
+            revive(result, map, paths);
+        }
+        return result as T;
+    }
+
+    if ($object.validate(cooked)) {
+        const parsed = $object.parse(cooked);
+        const result = Object.entries(parsed).reduce<Record<string, unknown>>((acc, [key, value]) => {
+            const _key = deserialize<string>(key, map);
+            const _value = deserialize(value as any, map, [...path, _key], paths);
+
+            acc[_key] = _value;
+            return acc;
+        }, {}) as object;
+        map.set(id, result);
+        if (initial) {
+            revive(result, map, paths);
+        }
+        return result as T;
     }
 
     throw new Error(`Failed to deserialize: ${cooked}`);

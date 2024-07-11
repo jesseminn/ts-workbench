@@ -108,4 +108,21 @@ describe('serialize', () => {
         console.log(d);
         expect(d).toBeTruthy();
     });
+
+    it('should handle date reference', () => {
+        const date = new Date();
+        const arr = [date, 42, date];
+        const s = serialize(arr);
+        const d = deserialize<any[]>(s);
+        expect(d[0]).toStrictEqual(d[2]);
+    });
+
+    it('should handle url reference', () => {
+        const url = new URL('https://www.google.com/');
+        const arr = [url, 42, url];
+        const s = serialize(arr);
+        console.log(s);
+        const d = deserialize<any[]>(s);
+        expect(d[0]).toStrictEqual(d[2]);
+    });
 });
