@@ -97,4 +97,15 @@ describe('serialize', () => {
         console.log(d);
         expect(d).toBeTruthy();
     });
+
+    it('should revive reference in a set', () => {
+        const obj = {};
+        const set = new Set<any>();
+        set.add(obj);
+        set.add(42);
+        const s = serialize(set);
+        const d = deserialize(s);
+        console.log(d);
+        expect(d).toBeTruthy();
+    });
 });

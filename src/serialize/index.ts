@@ -11,6 +11,18 @@ export function deserialize<T = unknown>(cooked: string): T {
     return _deserialize(cooked);
 }
 
+// const obj = { foo: 42 };
+// obj.self = obj;
+// const s = serialize(obj);
+// const d = deserialize(s);
+// console.log(d);
+
+// const arr: any[] = [123];
+// const obj = { a: 42, b: arr, c: [arr] };
+// const s = serialize(obj);
+// const d = deserialize(s);
+// console.log(d);
+
 // let foo = 42;
 // const obj = {
 //     async fn() {

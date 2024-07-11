@@ -7,69 +7,55 @@ import { $placeholder } from './tags';
  */
 export type ReferenceMap = Map<number, unknown>;
 
-export const revive = (x: object, map: ReferenceMap) => {
-    if (x instanceof Map) {
-        Array.from(x.entries()).forEach(([key, value]) => {
-            let _k = key;
-            if (typeof key === 'string' && $placeholder.validate(key)) {
-                const id = $placeholder.parse(key);
-                _k = map.get(id);
-            }
-            if (typeof key === 'object' && key !== null) {
-                revive(key, map);
-            }
+/**
+ * Will be a path to the reference placeholder. For example
+ * ```ts
+ * ['a', 'b', 0, '__PLACEHOLDER_START__##1##__PLACEHOLDER_END__']
+ * ````
+ * The path should be prepared in `deserialize` process.
+ */
+export type ReferencePath = Array<unknown>;
 
-            let _v = value;
-            if (typeof value === 'string' && $placeholder.validate(value)) {
-                const id = $placeholder.parse(value);
-                _v = map.get(id);
-            }
-            if (typeof value === 'object' && value !== null) {
-                revive(value, map);
-            }
-            x.delete(key);
-            x.set(_k, _v);
-        });
-    }
-
-    if (x instanceof Set) {
-        Array.from(x).forEach(itr => {
-            let _v = itr;
-            x.delete(itr);
-            if (typeof itr === 'string' && $placeholder.validate(itr)) {
-                const id = $placeholder.parse(itr);
-                _v = map.get(id);
-            }
-            if (typeof itr === 'object' && itr !== null) {
-                revive(itr, map);
-            }
-            x.add(_v);
-        });
-    }
-
-    if (Array.isArray(x)) {
-        x.forEach((itr, i) => {
-            if (typeof itr === 'string' && $placeholder.validate(itr)) {
-                const id = $placeholder.parse(itr);
-                x[i] = map.get(id);
-            }
-            if (typeof itr === 'object' && itr !== null) {
-                revive(itr, map);
-            }
-        });
-    }
-
-    if (isPOJO(x)) {
-        Reflect.ownKeys(x)
-            .map(key => [key, (x as any)[key]])
-            .forEach(([key, value]) => {
-                if (typeof value === 'string' && $placeholder.validate(value)) {
-                    const id = $placeholder.parse(value);
-                    (x as any)[key] = map.get(id);
+/**
+ * revive v2: only go through paths to placeholders
+ */
+export const revive = (x: object, map: ReferenceMap, paths: ReferencePath[]) => {
+    paths.forEach(path => {
+        let current = x;
+        path.forEach((p, i, thisArr) => {
+            if (i === thisArr.length - 1) {
+                const id = $placeholder.parse(p as string);
+                const key = thisArr[i - 1];
+                const ref = map.get(id);
+                if (current instanceof Map) {
+                    current.set(key, ref);
                 }
-                if (typeof value === 'object' && value !== null) {
-                    revive(value, map);
+                if (current instanceof Set) {
+                    current.delete(p);
+                    current.add(ref);
                 }
-            });
-    }
+                if (Array.isArray(current)) {
+                    current[key as number] = ref;
+                }
+                if (isPOJO(current)) {
+                    current[key as string] = ref;
+                }
+            }
+
+            if (i < thisArr.length - 2) {
+                if (current instanceof Map) {
+                    current = current.get(p);
+                }
+                if (current instanceof Set) {
+                    current = p as any;
+                }
+                if (Array.isArray(current)) {
+                    current = current[p as number];
+                }
+                if (isPOJO(current)) {
+                    current = current[p as string] as any;
+                }
+            }
+        });
+    });
 };

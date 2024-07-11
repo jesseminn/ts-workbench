@@ -1,5 +1,5 @@
 import { ID } from './utils';
-import { revive, ReferenceMap } from './revive';
+import { revive, ReferenceMap, ReferencePath } from './revive';
 import {
     $array,
     $bigint,
@@ -24,7 +24,12 @@ import {
 } from './tags';
 
 // can be memoized?
-export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T {
+export function deserialize<T = unknown>(
+    cooked: string,
+    _map?: ReferenceMap,
+    _path?: ReferencePath,
+    _paths?: ReferencePath[],
+): T {
     // ----- primitive types ----- //
     if ($string.validate(cooked)) {
         return $string.parse(cooked) as T;
@@ -77,7 +82,9 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
 
     // prepare reference id & reference map
     const id = Number(ID.parse(cooked));
-    const map: ReferenceMap = initial ? new Map<number, object>() : _map;
+    const map: ReferenceMap = _map || new Map<number, object>();
+    const path = _path || [];
+    const paths = _paths || [];
 
     if ($date.validate(cooked)) {
         const parsed = $date.parse(cooked);
@@ -93,34 +100,34 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
         const parsed = $map.parse(cooked);
         const entries = Object.entries(parsed).map(([key, value]) => {
             const _key = deserialize(key, map);
-            const _value = deserialize(value, map);
+            const _value = deserialize(value, map, [...path, key], paths);
             return [_key, _value] as const;
         });
         const result = new Map(entries);
         map.set(id, result);
         if (initial) {
-            revive(result, map);
+            revive(result, map, paths);
         }
         return result as T;
     }
 
     if ($set.validate(cooked)) {
         const parsed = $set.parse(cooked);
-        const arr = parsed.map(itr => deserialize(itr, map));
+        const arr = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
         const result = new Set(arr);
         map.set(id, result);
         if (initial) {
-            revive(result, map);
+            revive(result, map, paths);
         }
         return result as T;
     }
 
     if ($array.validate(cooked)) {
         const parsed = $array.parse(cooked);
-        const result = parsed.map(itr => deserialize(itr, map));
+        const result = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
         map.set(id, result);
         if (initial) {
-            revive(result, map);
+            revive(result, map, paths);
         }
         return result as T;
     }
@@ -128,15 +135,15 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     if ($object.validate(cooked)) {
         const parsed = $object.parse(cooked);
         const result = Object.entries(parsed).reduce<Record<string, unknown>>((acc, [key, value]) => {
-            const _key = deserialize<string>(key, map);
-            const _value = deserialize(value as any, map);
+            const _key = deserialize<string>(key, map, [...paths], paths);
+            const _value = deserialize(value as any, map, [...path, _key], paths);
 
             acc[_key] = _value;
             return acc;
         }, {}) as object;
         map.set(id, result);
         if (initial) {
-            revive(result, map);
+            revive(result, map, paths);
         }
         return result as T;
     }
@@ -185,6 +192,7 @@ export function deserialize<T = unknown>(cooked: string, _map?: ReferenceMap): T
     if ($placeholder.validate(cooked)) {
         // Just return the serialized string, will replace it with the real value
         // in `revive` process
+        paths.push([...path, cooked]);
         return cooked as T;
     }
 
