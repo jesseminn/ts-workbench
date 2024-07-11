@@ -43,12 +43,17 @@ export function batch<I, O>(action: (args: I[]) => O[] | Promise<O[]>, options?:
             timeoutId = setTimeout(async () => {
                 // clear & prepare
                 timeoutId = null;
-                const entries = Array.from(map.entries());
+                const args: I[] = [];
+                const entries: [I, [PromiseResolve<O>, PromiseReject][]][] = [];
+                for (const [key, handlers] of map.entries()) {
+                    const arg = deserialize<I>(key);
+                    args.push(arg);
+                    entries.push([arg, handlers]);
+                }
                 map.clear();
-                const args = entries.map(([key]) => deserialize<I>(key));
 
                 // perform action
-                const result = action(Array.from(args));
+                const result = action(args);
                 let output: O[] | undefined;
                 let error: any;
                 if (result instanceof Promise) {
@@ -74,8 +79,7 @@ export function batch<I, O>(action: (args: I[]) => O[] | Promise<O[]>, options?:
 
                 if (output) {
                     // got output, resolve all promises
-                    for (const [key, handlers] of entries) {
-                        const arg = deserialize<I>(key);
+                    for (const [arg, handlers] of entries) {
                         const selected = output.find(o => select(arg, o));
                         if (selected) {
                             for (const [resolve] of handlers) {
