@@ -1,14 +1,15 @@
 import { ID, POJO } from './utils';
 import { uid } from '../uid';
 
-const debug = true;
+// TODO: replace this with bundler
+const __DEV__ = true;
 
 class BaseTag {
     protected readonly start: string;
     protected readonly end: string;
     constructor(tag: string) {
-        this.start = debug ? `${tag}__START__` : uid();
-        this.end = debug ? `${tag}__END__` : uid();
+        this.start = __DEV__ ? `${tag}__START__` : uid();
+        this.end = __DEV__ ? `${tag}__END__` : uid();
     }
     validate(v: string) {
         return v.startsWith(this.start) && v.endsWith(this.end);

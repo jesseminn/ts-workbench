@@ -1,19 +1,35 @@
-import { isPOJO, ObjectKey } from './utils';
+import { isPOJO, ObjectKey, POJO } from './utils';
 import { $placeholder } from './tags';
 
 /**
  * key: reference id
+ *
  * value: referenced object
  */
 export type ReferenceMap = Map<number, unknown>;
 
 /**
  * key: parent object
- * value: key-placeholder pair
+ *
+ * value: key-value pair tuple.
+ *
+ * possible types
+ *
+ * - when the parent is a `Map`, both key and value could be placeholders
+ * - when the parent is a `Set`, key is `number` (but useless) and value is placeholder
+ * - when the parent is a `Set`, key is `number` (but useless) and value is placeholder
+ * - when the parent is an `Array`, key is `number` and value is placeholder
+ * - when the parent is n `POJO`, key is `string | symbol` and value is placeholder
+ *
  */
 export type PlaceholderMap = Map<object, [unknown, unknown]>;
 
-export const revive = (referenceMap: ReferenceMap, placeholderMap: PlaceholderMap) => {
+export type ReviveContext = {
+    readonly referenceMap: ReferenceMap;
+    readonly placeholderMap: PlaceholderMap;
+};
+
+export const revive = ({ referenceMap, placeholderMap }: ReviveContext) => {
     const entries = Array.from(placeholderMap.entries());
     entries.forEach(([obj, [key, value]]) => {
         if (obj instanceof Map) {

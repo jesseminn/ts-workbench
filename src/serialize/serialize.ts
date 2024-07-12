@@ -23,20 +23,20 @@ import {
     $url,
 } from './tags';
 
-type Context = {
+type SerializeContext = {
     /**
-     * a map to map an object (reference type) to a reference id
-     * the same object should always have the same reference id
+     * a map to map an object (reference type) to a reference id,
+     * the same object should always have the same reference id.
      */
     map: WeakMap<object, number>;
     /**
-     * the current count, increments when a new reference pair added to the map
-     * used to generate reference id
+     * the current count, increments when a new reference pair added to the map,
+     * used to generate reference id.
      */
     count: number;
 };
 
-export function serialize(raw: unknown, _ctx?: Context): string {
+export function serialize(raw: unknown, _ctx?: SerializeContext): string {
     switch (typeof raw) {
         case 'string':
             return $string.create(raw);
@@ -64,6 +64,7 @@ export function serialize(raw: unknown, _ctx?: Context): string {
         case 'undefined':
             return $undefined.create();
         case 'object':
+        case 'function':
             if (raw === null) {
                 return $null.create();
             }
@@ -81,6 +82,26 @@ export function serialize(raw: unknown, _ctx?: Context): string {
                 id = ctx.count;
                 ctx.map.set(raw, id);
             }
+
+            // ----- reference types which won't be a tree ----- //
+
+            if (raw instanceof Date) {
+                return $date.create(raw.getTime(), id);
+            }
+
+            if (raw instanceof RegExp) {
+                return $regexp.create(raw.source, id);
+            }
+
+            if (raw instanceof URL) {
+                return $url.create(raw.toJSON(), id);
+            }
+
+            if (typeof raw === 'function') {
+                return $function.create(raw.toString(), id);
+            }
+
+            // ----- reference types which could be a tree ----- //
 
             if (raw instanceof Map) {
                 const entries = Array.from(raw.entries());
@@ -112,18 +133,6 @@ export function serialize(raw: unknown, _ctx?: Context): string {
                     raw.map(itr => serialize(itr, ctx)),
                     id,
                 );
-            }
-
-            if (raw instanceof Date) {
-                return $date.create(raw.getTime(), id);
-            }
-
-            if (raw instanceof RegExp) {
-                return $regexp.create(raw.source, id);
-            }
-
-            if (raw instanceof URL) {
-                return $url.create(raw.toJSON(), id);
             }
 
             if (isPOJO(raw)) {
@@ -163,22 +172,5 @@ export function serialize(raw: unknown, _ctx?: Context): string {
             }
             const display = `${constructorName} {}#${id}`;
             return $unsupported_object.create(display, id);
-        case 'function': {
-            // FIXME: dupliated code
-            const ctx = _ctx || { map: new WeakMap(), count: 0 };
-            let id: number;
-            if (ctx.map.has(raw)) {
-                // if the object is already in the map, return the reference id
-                id = ctx.map.get(raw)!;
-                return $placeholder.create(id);
-            } else {
-                // the object is not in the map, store the object and id pair
-                ctx.count += 1;
-                id = ctx.count;
-                ctx.map.set(raw, id);
-            }
-
-            return $function.create(raw.toString(), id);
-        }
     }
 }
