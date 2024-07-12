@@ -1,5 +1,5 @@
-import { ID } from './utils';
-import { revive, ReferenceMap, ReferencePath } from './revive';
+import { ID, POJO } from './utils';
+import { PlaceholderMap, ReferenceMap, revive } from './revive';
 import {
     $array,
     $bigint,
@@ -13,7 +13,7 @@ import {
     $negative_zero,
     $null,
     $number,
-    $object,
+    $pojo,
     $placeholder,
     $regexp,
     $set,
@@ -27,9 +27,8 @@ import {
 // can be memoized?
 export function deserialize<T = unknown>(
     cooked: string,
-    _map?: ReferenceMap,
-    _path?: ReferencePath,
-    _paths?: ReferencePath[],
+    _referenceMap?: ReferenceMap,
+    _placeholderMap?: PlaceholderMap,
 ): T {
     // ----- primitive types ----- //
     if ($string.validate(cooked)) {
@@ -78,47 +77,46 @@ export function deserialize<T = unknown>(
 
     // ----- reference types ----- //
 
-    // the very first call to `deserialize` won't have `_map` arg
-    const initial = !_map;
     // prepare reference id & reference map
+
     const id = Number(ID.parse(cooked));
-    const map: ReferenceMap = _map || new Map<number, object>();
-    const path = _path || [];
-    const paths = _paths || [];
+    // the very first call to `deserialize` reference types won't have the map args
+    const initial = !_referenceMap;
+    const referenceMap: ReferenceMap = _referenceMap || new Map<number, object>();
+    const placeholderMap = _placeholderMap || new Map<object, [string, string]>();
 
     // ----- reference types which won't be a tree ----- //
 
     if ($date.validate(cooked)) {
         const parsed = $date.parse(cooked);
         const date = new Date(parsed);
-        map.set(id, date);
+        referenceMap.set(id, date);
         return date as T;
     }
 
     if ($regexp.validate(cooked)) {
         const parsed = $regexp.parse(cooked);
         const regexp = new RegExp(parsed);
-        map.set(id, regexp);
+        referenceMap.set(id, regexp);
         return regexp as T;
     }
 
     if ($url.validate(cooked)) {
         const parsed = $url.parse(cooked);
         const url = new URL(parsed);
-        map.set(id, url);
+        referenceMap.set(id, url);
         return url as T;
     }
 
     if ($unsupported_object.validate(cooked)) {
         const parsed = $unsupported_object.parse(cooked);
-        map.set(id, parsed);
+        referenceMap.set(id, parsed);
         return parsed as T;
     }
 
     if ($placeholder.validate(cooked)) {
         // Just return the serialized string, will replace it with the real value
         // in `revive` process
-        paths.push([...path, cooked]);
         return cooked as T;
     }
 
@@ -153,7 +151,7 @@ export function deserialize<T = unknown>(
         // change the name of the exposed function
         // https://stackoverflow.com/a/33067824
         Object.defineProperty(caller, 'name', { value: `${name}_caller` });
-        map.set(id, caller);
+        referenceMap.set(id, caller);
         return caller as T;
     }
 
@@ -161,52 +159,74 @@ export function deserialize<T = unknown>(
 
     if ($map.validate(cooked)) {
         const parsed = $map.parse(cooked);
-        const entries = Object.entries(parsed).map(([key, value]) => {
-            const _key = deserialize(key, map, [...path, key], paths);
-            const _value = deserialize(value, map, [...path, key], paths);
-            return [_key, _value] as const;
+        const result = new Map();
+        Object.entries(parsed).forEach(([key, value]) => {
+            const _key = deserialize(key, referenceMap, placeholderMap);
+            const _value = deserialize(value, referenceMap, placeholderMap);
+            // map's key & value both could be reference types
+            if (
+                (typeof _key === 'string' && $placeholder.validate(_key)) ||
+                (typeof _value === 'string' && $placeholder.validate(_value))
+            ) {
+                placeholderMap.set(result, [_key, _value]);
+            }
+            result.set(_key, _value);
         });
-        const result = new Map(entries);
-        map.set(id, result);
+        referenceMap.set(id, result);
         if (initial) {
-            revive(result, map, paths);
+            revive(referenceMap, placeholderMap);
         }
         return result as T;
     }
 
     if ($set.validate(cooked)) {
         const parsed = $set.parse(cooked);
-        const arr = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
-        const result = new Set(arr);
-        map.set(id, result);
+        const result = new Set();
+        parsed.forEach((itr, i) => {
+            const _value = deserialize(itr, referenceMap, placeholderMap);
+            if (typeof _value === 'string' && $placeholder.validate(_value)) {
+                placeholderMap.set(result, [i, _value]);
+            }
+            result.add(_value);
+        });
+        referenceMap.set(id, result);
         if (initial) {
-            revive(result, map, paths);
+            revive(referenceMap, placeholderMap);
         }
         return result as T;
     }
 
     if ($array.validate(cooked)) {
         const parsed = $array.parse(cooked);
-        const result = parsed.map((itr, i) => deserialize(itr, map, [...path, i], paths));
-        map.set(id, result);
+        const result = [] as Array<unknown>;
+        parsed.forEach((itr, i) => {
+            const _value = deserialize(itr, referenceMap, placeholderMap);
+            if (typeof _value === 'string' && $placeholder.validate(_value)) {
+                placeholderMap.set(result, [i, _value]);
+            }
+            result[i] = _value;
+        });
+        referenceMap.set(id, result);
         if (initial) {
-            revive(result, map, paths);
+            revive(referenceMap, placeholderMap);
         }
         return result as T;
     }
 
-    if ($object.validate(cooked)) {
-        const parsed = $object.parse(cooked);
-        const result = Object.entries(parsed).reduce<Record<string, unknown>>((acc, [key, value]) => {
-            const _key = deserialize<string>(key, map);
-            const _value = deserialize(value as any, map, [...path, _key], paths);
-
-            acc[_key] = _value;
-            return acc;
-        }, {}) as object;
-        map.set(id, result);
+    if ($pojo.validate(cooked)) {
+        const parsed = $pojo.parse(cooked);
+        const result = {} as POJO;
+        Object.entries(parsed).forEach(([key, value]) => {
+            const _key = deserialize<string>(key, referenceMap);
+            const _value = deserialize(value, referenceMap, placeholderMap);
+            if (typeof _value === 'string' && $placeholder.validate(_value)) {
+                placeholderMap.set(result, [_key, _value]);
+            }
+            result[_key] = _value;
+        });
+        referenceMap.set(id, result);
         if (initial) {
-            revive(result, map, paths);
+            revive(referenceMap, placeholderMap);
         }
         return result as T;
     }

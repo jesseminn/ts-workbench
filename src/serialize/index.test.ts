@@ -23,7 +23,7 @@ describe('serialize', () => {
         expect(_x).toEqual(_y);
     });
 
-    it('should sort keys of a set', () => {
+    it('should sort items of a set', () => {
         const x = new Set<string>();
         x.add('a');
         x.add('b');
@@ -51,6 +51,24 @@ describe('serialize', () => {
         const s = serialize(obj);
         const d = deserialize<typeof obj>(s);
         expect(d).toStrictEqual(d.self);
+    });
+
+    it('should handle circular references of a map', () => {
+        const map = new Map();
+        map.set(map, 42);
+        const s = serialize(map);
+        const d = deserialize<Map<any, any>>(s);
+        const keys = Array.from(d.keys());
+        expect(keys[0]).toStrictEqual(d);
+    });
+
+    it('should handle circular references of a set', () => {
+        const set = new Set();
+        set.add(set);
+        const s = serialize(set);
+        const d = deserialize<Set<any>>(s);
+        const values = Array.from(d.values());
+        expect(values[0]).toStrictEqual(d);
     });
 
     it('should serialize and deserialize a complex object', () => {

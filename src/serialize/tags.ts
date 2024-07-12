@@ -1,4 +1,4 @@
-import { ID } from './utils';
+import { ID, POJO } from './utils';
 import { uid } from '../uid';
 
 const debug = true;
@@ -9,6 +9,9 @@ class BaseTag {
     constructor(tag: string) {
         this.start = debug ? `${tag}__START__` : uid();
         this.end = debug ? `${tag}__END__` : uid();
+    }
+    validate(v: string) {
+        return v.startsWith(this.start) && v.endsWith(this.end);
     }
     protected wrap(str: string) {
         return `${this.start}${str}${this.end}`;
@@ -21,9 +24,6 @@ class BaseTag {
 class PrimitiveTag<T = unknown> extends BaseTag {
     constructor(tag: string) {
         super(tag);
-    }
-    validate(v: string) {
-        return v.startsWith(this.start) && v.endsWith(this.end);
     }
     create(v: T) {
         const stringified = JSON.stringify(v);
@@ -95,7 +95,7 @@ class ReferenceTag<T> extends BaseTag {
     }
     validate(v: string) {
         const stripped = ID.strip(v);
-        return stripped.startsWith(this.start) && stripped.endsWith(this.end);
+        return super.validate(stripped);
     }
     create(v: T, id: number) {
         const stringified = JSON.stringify(v);
@@ -123,7 +123,7 @@ export const $null = new SingletonPrimitiveTag('__NULL__', null);
 export const $array = new ReferenceTag<Array<string>>('__ARRAY__');
 export const $map = new ReferenceTag<Record<string, string>>('__MAP__');
 export const $set = new ReferenceTag<Array<string>>('__SET__');
-export const $object = new ReferenceTag<Record<string | symbol, string>>('__OBJECT__');
+export const $pojo = new ReferenceTag<POJO<string>>('__POJO__');
 export const $unsupported_object = new ReferenceTag('__UNSUPPORTED_OBJECT__');
 export const $function = new ReferenceTag<string>('__FUNCTION__');
 export const $date = new ReferenceTag<number>('__DATE__');

@@ -1,7 +1,11 @@
 // https://adamcoster.com/blog/pojo-detector
-export const isPOJO = (x: unknown): x is Record<string | symbol, unknown> => {
+export const isPOJO = (x: unknown): x is POJO => {
     return x !== null && typeof x === 'object' && [null, Object.prototype].includes(Object.getPrototypeOf(x));
 };
+
+export type POJO<T = unknown> = Record<ObjectKey, T>;
+
+export type ObjectKey = string | symbol;
 
 // An util object
 export const ID = {
@@ -9,7 +13,7 @@ export const ID = {
         const regex = /^##(.*?)##/;
         return regex.exec(v);
     },
-    bind(id: string | number, v: string) {
+    bind(id: number, v: string) {
         // TODO: randomize wrappers in production
         const start = '##';
         const end = '##';

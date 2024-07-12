@@ -12,7 +12,7 @@ import {
     $negative_zero,
     $null,
     $number,
-    $object,
+    $pojo,
     $placeholder,
     $regexp,
     $set,
@@ -150,7 +150,7 @@ export function serialize(raw: unknown, _ctx?: Context): string {
                     acc[serialize(key, ctx)] = serialize(value, ctx);
                     return acc;
                 }, {});
-                return $object.create(obj, id);
+                return $pojo.create(obj, id);
             }
 
             // Handle unsupported object
