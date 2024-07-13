@@ -1,146 +1,91 @@
 # Serialize & deserialize
 
-[Definition from MDN](https://developer.mozilla.org/en-US/docs/Glossary/Serialization)
+A pair of function which can serialize & deserialize several data types.
 
-> The process whereby an object or data structure is translated into a format suitable for transfer over a network, or storage (e.g. in an array buffer or file format).
+`serialize` can turn a data into a string, while `deserialize` can recover a data from a seriailzed string.
 
-Should not be confused with Node.js `v8.serialize`, which returns a `Buffer`
+## Features
 
--   Ref:
--   https://github.com/yahoo/serialize-javascript
--   https://github.com/facebookexperimental/Recoil/blob/main/packages/shared/util/Recoil_stableStringify.js
+### Supported data types which is not supported by `JSON.stringify` & `JSON.parse`
 
-## TODO
+-   Special numbers: `Infinity`, `-Infinity`, `NaN`, `-0`
+-   `symbol`
+-   `bigint`
+-   `Map`
+-   `Set`
+-   Other JavaScript built-in class instance, including `URL`, `RegExp` and `Date`
+-   Functions (with workaround)
 
-also list what are not supported by `JSON.stringify`
-also list what are not supported by `serialize-javascript`
-see what can be done by using `replacer` with `JSON.stringify` and `reviver` with `JSON.parse`
+    ```ts
+    const num = 42;
+    function fn(name: string) {
+        console.log(`${name} is ${num}`);
+    }
+    // undefined
+    console.log(JSON.stringify(fn));
+    // to rebuild closure, will returns a *caller* to the call the original function
+    const _fn = deserialize(serialize(fn));
+    // foo is 66
+    _fn({ num: 66 })('foo');
+    ```
 
-This article points out some features what `JSON.stringify` lacks
-https://www.turing.com/kb/implementing-json-serialization-in-js
+-   Objects (only supports **POJO**)
 
-handle URL object
+### Unsupported data types
 
-handle serializing/deserializing native functions, e.g. `alert`
+-   Native functions, such as `alert`
+-   Object which are NOT a pojo.
+-   Promise. It's impossible to revive a promise.
+-   Iterable.
+-   WeakMap & WeakSet. because Weak containers are unable to iterate over its content
 
-## Types can be deserialized after being serialized
+### Stable order
 
-`Symbol`
-
-`Map`
-
-`Set`
-
-special numbers https://javascript.plainenglish.io/javascript-special-numbers-404dd5bf5f20
-`Infinity` / `-Infinity`
-`0` / `-0`
-`NaN`
-
-`BigInt`
-`Date`
-`Function`?
-RegExp
-POJO (plain old JavaScrpt object)
-
-## Types cannot be deserialized
-
-Promise. It's impossible to revive a promise.
-
-Iterable. By definition, an iterable is _anything_ which can access `Symbol.iterator` method,
-even through the prototype chain. Therefore, even a string is also an iterable.
-
-So there're 2 conditions
-
-    - The object owns the `Symbol.iterator` method
-
-        ```ts
-        const iterable = {
-            [Symbol.iterator]() {
-                // iterabion
-            }
-        }
-        ```
-    - The object can access `Symbol.iterator` method through prototype chain,
-        this is an **unsupported object**
-
-WeakMap? because Weak containers are unable to iterate over its content
-WeakSet?
-
-Objects which are NOT pojo
-
-### Why `toJSON` is NOT supported
-
-`JSON.stringify` will use the value returned by `toJSON` method,
-`toJSON` is not support by `serialize` because the returned string from `toJSON` is not
-guarenteed to be deserializeable. For example, `Date` has a built-in `toJSON` method:
-
-```ts
-const date = new Date();
-typeof date.toJSON; // 'function'
-date.toJSON(); // an ISON date string
-const s = JSON.stringify(d); // '"2024-07-06T14:25:50.471Z"'
-const d = JSON.parse(s); // '2024-07-06T14:25:50.471Z', not the original date object
-```
-
-## Make order stable
+Object keys, map keys & set items by definitions should be unordered.
 
 ```ts
 const x = { a: '', b: '' };
 const y = { b: '', a: '' };
-// false, but object's keys by definitions should be unordered
-JSON.stringify(x) === JSON.stringify(y);
+
+// false
+console.log(JSON.stringify(x) === JSON.stringify(y));
+
+// true
+console.log(serialize(x) === serialize(y));
 ```
 
-Therefore,
+In short,
 
 -   For maps & objects, sort the keys in a consistent order.
 -   For sets, items are also sorted.
 
-Ref for implementation:
-https://github.com/facebookexperimental/Recoil/blob/main/packages/shared/util/Recoil_stableStringify.js#L76
+This will be useful when you need to compare the difference between objects.
+For example, avoid unnecessary re-render by comparing objects before actually setting state in a React component
 
-## What is POJO
+```ts
+fetchUserInfo(id).then(res => {
+    setState(current => {
+        const _current = serialize(current);
+        const _next = serialize(res.data);
+        if (_current === _next) {
+            return current;
+        } else {
+            return res.data;
+        }
+    });
+});
+```
 
-The defenition of POJO varied, here's my conclusion:
+### Circular reference
 
--   An object created by `Object.create(null)`
--   Or an object is directly constructed by `Object` class. It could be
+```ts
+const obj = {};
+obj.self = obj;
 
-    -   Created by _object literal_
-    -   Or created by [`new Object()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/Object)
+// TypeError: Converting circular structure to JSON
+console.log(JSON.stringify(obj));
 
-References
-
--   https://gist.github.com/kurtmilam/a1179741777ea6f88374286a640829cc
--   https://masteringjs.io/tutorials/fundamentals/pojo
-
-    This articles provides an `isPojo` util but I found it's has a pitfall:
-
-    ```ts
-    const o1 = { foo: 42 };
-    const o2 = Object.create(o1);
-
-    // 42, but `o2` does not have own `foo` prop
-    o2.foo;
-    // true, `o2`'s `[[Prototype]]` (`__proto__`) is `o1`
-    Object.getPrototypeOf(o2) === o1;
-    // true, but `o1` does not has `constructor` prop
-    Object.getPrototypeOf(o2).constructor === 'Object';
-    // true, it's because `o1.constructor` is from `Object.prototype.constructor`
-    o1.constructor === Object.prototype.constructor;
-    ```
-
-    In the example, `o2` is not a POJO.
-
--   This article provides the solution https://adamcoster.com/blog/pojo-detector
-
-## JSON reserved chars
-
-JSON reserved chars https://stackoverflow.com/a/27516892
-
-Usually `JSON.stringify` handles this,
-will only occur if `JSON.parse` a string which is NOT produced by `JSON.stringify`,
-
-## Others
-
-[JSON5](https://github.com/json5/json5)
+const _obj = deserialize(serialize(obj));
+// true
+console.log(_obj.self === _obj);
+```
