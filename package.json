@@ -21,11 +21,13 @@
     "scripts": {
         "dev": "tsx watch index.ts",
         "build": "rm -rf ./dist && npx --yes tsc",
-        "format": "prettier . --write --ignore-path .gitignore",
-        "format:watch": "onchange \"**/*\" -- prettier {{changed}} --write --ignore-path .gitignore --ignore-unknown",
+        "prepare": "[ ! -d '.git' ] && npm run build || husky",
         "test": "jest",
         "test:watch": "jest --watch",
-        "prepare": "[ ! -d '.git' ] && npm run build || husky"
+        "format": "prettier . --write --ignore-path .gitignore",
+        "format:watch": "onchange \"**/*\" -- prettier {{changed}} --write --ignore-path .gitignore --ignore-unknown",
+        "type-check": "tsc --noEmit",
+        "type-check:watch": "tsc --watch"
     },
     "devDependencies": {
         "@types/jest": "^29.5.12",
@@ -48,6 +50,7 @@
         }
     },
     "lint-staged": {
-        "**/*": "prettier --write --ignore-unknown"
+        "**/*": "prettier --write --ignore-unknown",
+        "**/*.{js,jsx,ts,tsx}": "jest --bail --findRelatedTests"
     }
 }
