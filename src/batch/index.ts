@@ -14,8 +14,8 @@ export function batch<I, O>(action: (args: I[]) => O[] | Promise<O[]>, options?:
     // silence TS2367: comparison appears to be unintentional
     const select = options?.select ?? ((i, o) => i === (o as any));
 
-    // TODO: need to serialize the key to string because I could be anything
-    // if I is not primitive, the object with the same content will be considered different
+    // need to serialize the key to string because `I` could be anything,
+    // if `I` is not primitive, the object with the same content will be considered different
     const map = new Map<string, Array<[PromiseResolve<O>, PromiseReject]>>();
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 

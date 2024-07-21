@@ -1,5 +1,5 @@
 import { ID, ObjectKey, POJO } from './utils';
-import { PlaceholderMap, ReferenceMap, revive, ReviveContext } from './revive';
+import { revive, ReviveContext } from './revive';
 import {
     $array,
     $bigint,

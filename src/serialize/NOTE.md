@@ -2,6 +2,11 @@
 
 -   Handle serializing/deserializing native functions, e.g. `alert`
 -   Might have API for adding support to unsupported objects.
+-   Check this gist to improve deserilize functions
+    -   https://gist.github.com/briancavalier/4a820b32e0d2abca89f7
+    -   https://stackoverflow.com/questions/7395686/how-can-i-serialize-a-function-in-javascript
+-   js built-in objects
+    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
 
 ## What is serialize
 
@@ -108,3 +113,19 @@ will only occur if `JSON.parse` a string which is NOT produced by `JSON.stringif
 -   [`serialize-javascript`](https://github.com/yahoo/serialize-javascript)
 -   [`serialize-closures`](https://www.npmjs.com/package/serialize-closures)
 -   The [internal `stableStringify` util](https://github.com/facebookexperimental/Recoil/blob/main/packages/shared/util/Recoil_stableStringify.js) in Recoil
+
+## Getting object keys
+
+`Object.keys(obj)` returns **enumerable** **`string`** hkeys.
+
+`Object.getOwnPropertyNames(obj)` returns **all** **`string`** keys.
+
+`Object.getOwnPropertySymbols(obj)` returns **all** **`symbol`** keys.
+
+`Reflect.ownKeys` returns **all** **`string` & `symbol`** keys. It's equivalent to
+
+```ts
+Object.getOwnPropertyNames(target).concat(Object.getOwnPropertySymbols(target));
+```
+
+ref: https://stackoverflow.com/a/34449216

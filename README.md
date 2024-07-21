@@ -16,7 +16,7 @@ You can fork it before installing.
 ### Known issue
 
 For unknown reason, you might installed old version when installing from Github by `npm i`.
-Running `npm cache clean --force` won't help. Possible solutions on the host project side:
+Running [`npm cache clean --force`](https://docs.npmjs.com/cli/v10/commands/npm-cache) won't help. Possible solutions on the host project side:
 
 Instead of `npm i`, run `npm i jesseminn/ts-workbench`.
 
