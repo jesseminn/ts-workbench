@@ -1,4 +1,4 @@
-import { random } from '../random';
+import { randomBetween } from '../random';
 import { Avoid } from '../types';
 import { uid } from '../uid';
 
@@ -160,12 +160,12 @@ retry.thunk = <I extends Array<unknown>, O>(fn: (...args: I) => O, options: Retr
 const exponentialBackoff = (base: number, cap: number, count: number, jitter: JitterStrategy, prev: number): number => {
     switch (jitter) {
         case 'full':
-            return random(0, Math.min(cap, base * 2 ** count));
+            return randomBetween(0, Math.min(cap, base * 2 ** count));
         case 'equal':
             const backoff = Math.min(cap, base * 2 ** count);
-            return random(backoff / 2, backoff);
+            return randomBetween(backoff / 2, backoff);
         case 'decorrelated':
-            return Math.min(cap, random(base, prev * 3));
+            return Math.min(cap, randomBetween(base, prev * 3));
     }
 };
 
