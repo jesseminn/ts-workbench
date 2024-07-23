@@ -1,4 +1,26 @@
-export function wait(duration: number) {
-    return new Promise(resolve => setTimeout(resolve, duration));
+export class WaitAbortError extends Error {
+    constructor(public readonly reason: unknown) {
+        super('WaitAbortError');
+    }
 }
-// cancel wait?
+
+export async function wait(duration: number, signal?: AbortSignal) {
+    let onAbort: (() => void) | undefined;
+    return new Promise<void>((resolve, reject) => {
+        const id = setTimeout(() => {
+            resolve();
+        }, duration);
+
+        if (signal) {
+            onAbort = () => {
+                clearTimeout(id);
+                reject(new WaitAbortError(signal.reason));
+            };
+            signal.addEventListener('abort', onAbort, { once: true });
+        }
+    }).finally(() => {
+        if (signal && onAbort) {
+            signal.removeEventListener('abort', onAbort);
+        }
+    });
+}
