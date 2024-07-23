@@ -1,4 +1,4 @@
-import { random } from '../random';
+import { randomString } from '../random';
 
 const cache = new WeakMap<object, string>();
 
@@ -7,8 +7,7 @@ export const uid = (seed?: object) => {
         return cache.get(seed)!;
     }
 
-    // https://stackoverflow.com/questions/3231459/how-can-i-create-unique-ids-with-javascript
-    const result = random().toString(16).slice(2, 10);
+    const result = randomString(8);
 
     if (seed) {
         cache.set(seed, result);
