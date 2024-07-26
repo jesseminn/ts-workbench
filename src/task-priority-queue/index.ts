@@ -62,6 +62,6 @@ export class TaskPriorityQueue {
     }
 
     onDone(callback: () => void) {
-        return this.done$.once(callback);
+        return this.done$.addListenerOnce(callback);
     }
 }
