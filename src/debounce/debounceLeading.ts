@@ -1,3 +1,5 @@
+import { DebouncedError } from './types';
+
 export function debounceLeading<I extends Array<unknown>, O>(
     fn: (...args: I) => O,
     duration: number,
@@ -21,7 +23,7 @@ export function debounceLeading<I extends Array<unknown>, O>(
                 result = undefined;
             }, duration);
             if (result instanceof Promise) {
-                return Promise.reject('debounced');
+                return Promise.reject(new DebouncedError());
             } else {
                 return undefined;
             }

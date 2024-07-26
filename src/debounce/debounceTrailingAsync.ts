@@ -1,3 +1,5 @@
+import { DebouncedError } from './types';
+
 export function debounceTrailingAsync<I extends Array<unknown>, O>(fn: (...args: I) => Promise<O>, duration: number) {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let currentReject: ((reason?: any) => void) | null = null;
@@ -7,7 +9,7 @@ export function debounceTrailingAsync<I extends Array<unknown>, O>(fn: (...args:
             timer = null;
         }
         if (currentReject) {
-            currentReject?.('debounced');
+            currentReject?.(new DebouncedError());
             currentReject = null;
         }
         return new Promise<O>((resolve, reject) => {
