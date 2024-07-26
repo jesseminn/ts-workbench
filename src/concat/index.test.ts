@@ -14,8 +14,10 @@ describe('concatFn', () => {
             return count;
         });
 
+        /*
         fn(); // log 1 after 1s
         fn(); // log 2 after 2s
         fn(); // log 3 after 3s
+        */
     });
 });

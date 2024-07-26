@@ -57,3 +57,7 @@ const UserList = () => {
 ```
 
 In this way, the API will be called N + 1 times (1 time for `/my_friends`, N times for `/user_info`).
+
+## Reference
+
+https://www.freecodecamp.org/news/n-plus-one-query-problem/

@@ -24,3 +24,15 @@ export async function wait(duration: number, signal?: AbortSignal) {
         }
     });
 }
+
+export const nextFrame = () => {
+    return new Promise(resolve => {
+        if (requestAnimationFrame) {
+            requestAnimationFrame(resolve);
+        } else if (setImmediate) {
+            setImmediate(resolve);
+        } else {
+            setTimeout(resolve, 0);
+        }
+    });
+};
