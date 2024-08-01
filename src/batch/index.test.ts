@@ -1,28 +1,27 @@
 import { batch } from '.';
+import { wait } from '../wait';
+import { randomInt } from '../random';
+
+jest.useFakeTimers();
+
+type UserInfo = {
+    uid: string;
+    age: number;
+};
+
+// fake api
+const fetchUserInfo = jest.fn(async (uids: string[]): Promise<UserInfo[]> => {
+    await wait(1000);
+    return uids.map(uid => {
+        return {
+            uid,
+            age: randomInt([0, 100]),
+        };
+    });
+});
 
 describe('batch', () => {
-    it('should batch', () => {
-        type UserInfo = {
-            uid: string;
-            age: number;
-        };
-
-        function fetchUserInfo(uids: string[]) {
-            console.log('fetch uids', uids);
-            return new Promise<UserInfo[]>(resolve => {
-                setTimeout(() => {
-                    resolve(
-                        uids.map(uid => {
-                            return {
-                                uid,
-                                age: Math.random(),
-                            };
-                        }),
-                    );
-                }, 1000);
-            });
-        }
-
+    it('should batch requests', () => {
         const batchedFetchUserInfo = batch(fetchUserInfo, {
             type: 'debounce',
             duration: 1000,
@@ -37,17 +36,16 @@ describe('batch', () => {
         batchedFetchUserInfo('bbb').then(userInfo => {
             console.log(userInfo);
         });
-        batchedFetchUserInfo('ccc').then(userInfo => {
-            console.log(userInfo);
-        });
 
         setTimeout(() => {
-            batchedFetchUserInfo('xxx').then(userInfo => {
-                console.log(userInfo);
-            });
-            batchedFetchUserInfo('yyy').then(userInfo => {
+            batchedFetchUserInfo('ccc').then(userInfo => {
                 console.log(userInfo);
             });
         }, 500);
+
+        jest.advanceTimersByTime(1500);
+
+        expect(fetchUserInfo).toHaveBeenCalledTimes(1);
+        expect(fetchUserInfo).toHaveBeenCalledWith(['aaa', 'bbb', 'ccc']);
     });
 });
