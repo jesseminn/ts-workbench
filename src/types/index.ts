@@ -123,3 +123,23 @@ export type Avoid<T extends Record<string, any>, K extends keyof T> = Omit<T, K>
 export type Override<T extends Record<string, any>, K extends Partial<T>> = Omit<T, keyof K> & K;
 
 export type StrictExtract<T, U extends T> = U extends T ? U : never;
+
+/**
+ * ```ts
+ * function foo<T>(v: NotPromise<T>) {}
+ * // type error
+ * foo(new Promise(() => {}))
+ * // ok
+ * foo(42);
+ * ```
+ */
+export type NotPromise<T> = T extends Promise<unknown> ? never : T;
+
+/**
+ * ```ts
+ * type X = string | Promise<number> | Promise<boolean>
+ * // string
+ * type Y = ExcludePromise<X>;
+ * ```
+ */
+export type ExcludePromise<T> = Exclude<T, Promise<any>>;

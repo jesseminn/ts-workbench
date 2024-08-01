@@ -51,6 +51,6 @@
     },
     "lint-staged": {
         "**/*": "prettier --write --ignore-unknown",
-        "**/*.{js,jsx,ts,tsx}": "jest --bail --findRelatedTests"
+        "**/*.{js,jsx,ts,tsx}": "jest --bail --findRelatedTests --passWithNoTests"
     }
 }

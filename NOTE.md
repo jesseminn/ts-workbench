@@ -3,7 +3,6 @@
 ## TODOs
 
 -   jsdoc https://deno.com/blog/document-javascript-package & https://www.npmjs.com/package/prettier-plugin-jsdoc
--   await to (improve type definition)
 
 ## Install a Github repo as an npm package
 
