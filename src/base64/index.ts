@@ -2,48 +2,78 @@ const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+
 const paddingChar = '=';
 
 function encode(input: string): string {
-    const paddings = 3 - (input.length % 3);
-    const binaries = input
-        .split('')
-        .map(char => char.charCodeAt(0).toString(2).padStart(8, '0'))
-        .join('')
-        .padEnd((input.length + paddings) * 8, '0');
-    const chars = [];
-    for (let i = 0; i < binaries.length; i += 6) {
-        const chunk = binaries.slice(i, i + 6);
-        const index = parseInt(chunk, 2);
-        const char = charset[index];
-        chars.push(char);
+    const paddings = 3 - (input.length % 3 || 3);
+    let encoded = '';
+    let binaries = '';
+    for (let i = 0; i < input.length + paddings; i++) {
+        const char = input[i];
+        const binary = char ? char.charCodeAt(0).toString(2).padStart(8, '0') : '00000000';
+        const mod = binaries.length % 6;
+        if (mod === 0) {
+            encoded += charset[parseInt(binary.slice(0, 6), 2)];
+            binaries = binary.slice(6);
+        }
+        if (mod === 2) {
+            encoded += charset[parseInt(`${binaries}${binary.slice(0, 4)}`, 2)];
+            binaries = binary.slice(4);
+        }
+        if (mod === 4) {
+            if (paddings === 1) {
+                if (!char) {
+                    encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                    encoded += paddingChar;
+                } else {
+                    encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                    encoded += charset[parseInt(binary.slice(2), 2)];
+                }
+            } else if (paddings === 2) {
+                if (!input[i - 1]) {
+                    encoded += paddingChar;
+                    encoded += paddingChar;
+                } else {
+                    encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                    encoded += charset[parseInt(binary.slice(2), 2)];
+                }
+            } else {
+                // no padding
+                encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                encoded += charset[parseInt(binary.slice(2), 2)];
+            }
+            binaries = '';
+        }
     }
-    for (let i = 0; i < paddings; i++) {
-        chars[chars.length - 1 - i] = paddingChar;
-    }
-    return chars.join('');
+
+    return encoded;
 }
 
 function decode(input: string): string {
-    const paddingIndex = input.indexOf(paddingChar);
-    const paddings = paddingIndex === -1 ? 0 : input.length - paddingIndex;
-    const binaries = input
-        .split('')
-        .map(char => {
-            let index: number;
-            if (char === paddingChar) {
-                index = charset.indexOf('A');
-            } else {
-                index = charset.indexOf(char);
-            }
-            return index.toString(2).padStart(6, '0');
-        })
-        .join('');
-    const chars = [];
-    for (let i = 0; i < binaries.length; i += 8) {
-        const chunk = binaries.slice(i, i + 8);
-        const index = parseInt(chunk, 2);
-        const char = String.fromCharCode(index);
-        chars.push(char);
+    let decoded = '';
+    let binaries = '';
+    for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+        if (char === paddingChar) {
+            return decoded;
+        }
+        const code = charset.indexOf(char);
+        const binary = code.toString(2).padStart(6, '0');
+        const mod = binaries.length % 8;
+        if (mod === 0) {
+            binaries += binary;
+        }
+        if (mod === 2) {
+            decoded += String.fromCharCode(parseInt(`${binaries}${binary}`, 2));
+            binaries = '';
+        }
+        if (mod === 4) {
+            decoded += String.fromCharCode(parseInt(`${binaries}${binary.slice(0, 4)}`, 2));
+            binaries = binary.slice(4);
+        }
+        if (mod === 6) {
+            decoded += String.fromCharCode(parseInt(`${binaries}${binary.slice(0, 2)}`, 2));
+            binaries = binary.slice(2);
+        }
     }
-    return chars.slice(0, chars.length - paddings).join('');
+    return decoded;
 }
 
 export const base64 = {
