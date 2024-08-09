@@ -8,38 +8,48 @@ function encode(input: string): string {
     for (let i = 0; i < input.length + paddings; i++) {
         const char = input[i];
         const binary = char ? char.charCodeAt(0).toString(2).padStart(8, '0') : '00000000';
-        const mod = binaries.length % 6;
-        if (mod === 0) {
-            encoded += charset[parseInt(binary.slice(0, 6), 2)];
-            binaries = binary.slice(6);
-        }
-        if (mod === 2) {
-            encoded += charset[parseInt(`${binaries}${binary.slice(0, 4)}`, 2)];
-            binaries = binary.slice(4);
-        }
-        if (mod === 4) {
-            if (paddings === 1) {
-                if (!char) {
-                    encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
-                    encoded += paddingChar;
-                } else {
-                    encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
-                    encoded += charset[parseInt(binary.slice(2), 2)];
+        // the binaries length could only be 0, 2 or 4 because the bits will be consumed once become 6
+        switch (binaries.length) {
+            case 0:
+                encoded += charset[parseInt(binary.slice(0, 6), 2)];
+                binaries = binary.slice(6);
+                break;
+            case 2:
+                encoded += charset[parseInt(`${binaries}${binary.slice(0, 4)}`, 2)];
+                binaries = binary.slice(4);
+                break;
+            case 4:
+                // the paddings count could only be 0, 1 or 2
+                switch (paddings) {
+                    case 0:
+                        encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                        encoded += charset[parseInt(binary.slice(2), 2)];
+                        break;
+                    case 1:
+                        // when there's only one padding and current char is undedefined (exceeded input string ranged)
+                        // which means the last char is a padding char
+                        if (!char) {
+                            encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                            encoded += paddingChar;
+                        } else {
+                            encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                            encoded += charset[parseInt(binary.slice(2), 2)];
+                        }
+                        break;
+                    case 2:
+                        // when there are 2 paddings and previous char is undedefined (exceeded input string ranged)
+                        // which means the last 2 chars are padding chars
+                        if (!input[i - 1]) {
+                            encoded += paddingChar;
+                            encoded += paddingChar;
+                        } else {
+                            encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
+                            encoded += charset[parseInt(binary.slice(2), 2)];
+                        }
+                        break;
                 }
-            } else if (paddings === 2) {
-                if (!input[i - 1]) {
-                    encoded += paddingChar;
-                    encoded += paddingChar;
-                } else {
-                    encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
-                    encoded += charset[parseInt(binary.slice(2), 2)];
-                }
-            } else {
-                // no padding
-                encoded += charset[parseInt(`${binaries}${binary.slice(0, 2)}`, 2)];
-                encoded += charset[parseInt(binary.slice(2), 2)];
-            }
-            binaries = '';
+                binaries = '';
+                break;
         }
     }
 
@@ -51,26 +61,29 @@ function decode(input: string): string {
     let binaries = '';
     for (let i = 0; i < input.length; i++) {
         const char = input[i];
+        // once reached the padding char, don't need to continue the loop
         if (char === paddingChar) {
-            return decoded;
+            break;
         }
         const code = charset.indexOf(char);
         const binary = code.toString(2).padStart(6, '0');
-        const mod = binaries.length % 8;
-        if (mod === 0) {
-            binaries += binary;
-        }
-        if (mod === 2) {
-            decoded += String.fromCharCode(parseInt(`${binaries}${binary}`, 2));
-            binaries = '';
-        }
-        if (mod === 4) {
-            decoded += String.fromCharCode(parseInt(`${binaries}${binary.slice(0, 4)}`, 2));
-            binaries = binary.slice(4);
-        }
-        if (mod === 6) {
-            decoded += String.fromCharCode(parseInt(`${binaries}${binary.slice(0, 2)}`, 2));
-            binaries = binary.slice(2);
+        // binaries length could only be 0, 2, 4 or 6 because the bits will be consumed once become 8
+        switch (binaries.length) {
+            case 0:
+                binaries += binary;
+                break;
+            case 2:
+                decoded += String.fromCharCode(parseInt(`${binaries}${binary}`, 2));
+                binaries = '';
+                break;
+            case 4:
+                decoded += String.fromCharCode(parseInt(`${binaries}${binary.slice(0, 4)}`, 2));
+                binaries = binary.slice(4);
+                break;
+            case 6:
+                decoded += String.fromCharCode(parseInt(`${binaries}${binary.slice(0, 2)}`, 2));
+                binaries = binary.slice(2);
+                break;
         }
     }
     return decoded;
