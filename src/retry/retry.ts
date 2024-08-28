@@ -7,8 +7,8 @@ export type RetryOptions = {
     cap?: number;
     attempts?: number;
     jitter?: JitterStrategy;
-    // TODO:
-    // timeout?: number;
+    timeout?: number;
+    // if exists, the abort will be controlled manually
     signal?: AbortSignal;
     debug?: boolean;
 };
@@ -48,8 +48,14 @@ async function _retry<O>(fn: RetryFn<O>, options: RetryOptions, _ctx?: RetryCont
     const base = options.base;
     const attempts = options.attempts ?? Infinity;
     const jitter = options.jitter ?? 'full';
-    const controller = _ctx?._.signal || options.signal ? null : new AbortController();
-    const signal = _ctx?._.signal || options.signal || controller!.signal;
+    let signal: AbortSignal;
+    if (options.signal) {
+        signal = options.signal;
+    } else {
+        const abortController = new AbortController();
+        const timeoutSignal = typeof options.timeout === 'number' ? AbortSignal.timeout(options.timeout) : null;
+        signal = AbortSignal.any(timeoutSignal ? [abortController.signal, timeoutSignal] : [abortController.signal]);
+    }
 
     const ctx: RetryContext = _ctx || {
         id: uid(),
@@ -61,6 +67,7 @@ async function _retry<O>(fn: RetryFn<O>, options: RetryOptions, _ctx?: RetryCont
 
         _: {
             signal,
+            error: null,
         },
     };
 

@@ -132,6 +132,7 @@ export type StrictExtract<T, U extends T> = U extends T ? U : never;
  * // ok
  * foo(42);
  * ```
+ * Ref: {@link https://levelup.gitconnected.com/how-is-promise-t-be-assignable-to-t-f147d13d1e76}
  */
 export type NotPromise<T> = T extends Promise<unknown> ? never : T;
 

@@ -2,6 +2,8 @@
 
 ## TODO
 
+https://codecurated.com/blog/designing-a-retry-mechanism-for-reliable-systems/
+
 `options.timeout`
 
 -   start a timeout at the first call
